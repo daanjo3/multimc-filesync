@@ -1,5 +1,5 @@
-import { listLocalSaves } from "./multimc"
-import { listRemoteSaves } from "./gdrive"
+import { listLocalSaves } from './multimc'
+import { listRemoteSaves } from './gdrive'
 
 // WIP
 
@@ -7,8 +7,8 @@ async function syncLocal() {
   // 1. List all local and remote master files
   const localFiles = await listLocalSaves()
   const remoteFiles = await listRemoteSaves()
-  console.log(localFiles)
-  console.log(remoteFiles)
+  console.log(localFiles.map((f) => f.toString()))
+  console.log(remoteFiles.map((f) => f.toString()))
   // 2. Update all local files where remote is newer
   // 3. Download all remote files which don't exist locally
 }
