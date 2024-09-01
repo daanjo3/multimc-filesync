@@ -52,13 +52,13 @@ async function createDir(dirName: string, parents?: string[]): Promise<string> {
   }
 }
 
-async function listDir(dirId: string): Promise<drive_v3.Schema$File[]> {
+async function listDir(q: string): Promise<drive_v3.Schema$File[]> {
   const service = await getGDriveService()
   const files = []
 
   const res = await service.files.list({
     pageSize: 100,
-    q: `\'${dirId}\' in parents`,
+    q,
     fields: 'nextPageToken, files(id, name, appProperties, modifiedTime)',
   })
   let data: drive_v3.Schema$FileList | undefined = res.data
@@ -74,6 +74,14 @@ async function listDir(dirId: string): Promise<drive_v3.Schema$File[]> {
     }
   }
   return files
+}
+
+async function listDirAll(): Promise<drive_v3.Schema$File[]> {
+  return listDir(`'${DIRNAME_MC_SYNC}' in parents`)
+}
+
+async function listInstanceMasterDir(instanceId: string): Promise<drive_v3.Schema$File[]> {
+  return listDir(`'${DIRNAME_MC_SYNC}' in parents and appProperties has { key='mcInstance' and value='${instanceId}'} and appProperties has { key='mcType' and value='master'}`)
 }
 
 async function getOrCreateMinecraftSyncDir(): Promise<string> {
@@ -124,5 +132,13 @@ export async function createFile(
 
 export async function listRemoteSaves() {
   const dirId = await getOrCreateMinecraftSyncDir()
-  return listDir(dirId).then((files) => files.filter((f) => !!f.appProperties).map((file) => McWorldFile.fromGDriveData(file)))
+  return listDirAll().then((files) => files.filter((f) => !!f.appProperties).map((file) => McWorldFile.fromGDriveData(file)))
+}
+
+// Create proxy file (or add revision)
+// Update master file (by evaluating proxies)
+
+// Download latest master file
+export async function getMasterFiles(instance: string) {
+  const instanceMasters = await listInstanceMasterDir(instance)
 }
