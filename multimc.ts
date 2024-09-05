@@ -1,6 +1,5 @@
-import type { BunFile } from 'bun'
 import fs from 'node:fs'
-import McWorldFile from './McWorldFile'
+import { LocalMcWorldFile } from './McWorldFile'
 
 function mockMultiMcVars() {
   process.env.INST_NAME = '1.19.2'
@@ -9,8 +8,8 @@ function mockMultiMcVars() {
 }
 mockMultiMcVars()
 
-export function listLocalSaves(): McWorldFile[] {
+export function listLocalSaves(): LocalMcWorldFile[] {
   const savesPath = `${process.env.INST_DIR}/.minecraft/saves`
   const saveNames = fs.readdirSync(savesPath)
-  return saveNames.map((saveName) => McWorldFile.fromLocalData(Bun.file(`${savesPath}/${saveName}`)))
+  return saveNames.map((saveName) => LocalMcWorldFile.fromFile(Bun.file(`${savesPath}/${saveName}`)))
 }

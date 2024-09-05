@@ -24,62 +24,26 @@ const hasRequiredFields = {
     local: (file: BunFile): file is BunFile & { name: string, lastModified: Date } => !!file.lastModified && !!file.name
 }
 
-export default class McWorldFile {
+export abstract class McWorldFile<SD extends SourceData> {
     name: string
     lastUpdated: Date
     instance: string
-    sourceData: SourceData
+    sourceData: SD
 
-    constructor(name: string, lastUpdated: Date, instance: string, sourceData: SourceData) {
+    constructor(name: string, lastUpdated: Date, instance: string, sourceData: SD) {
         this.name = name
         this.lastUpdated = lastUpdated
         this.instance = instance
         this.sourceData = sourceData
     }
 
-    static fromGDriveData(file: drive_v3.Schema$File) {
-        if (!hasRequiredFields.gDrive(file)) {
-            console.log({ file: JSON.stringify(file, null, 2)})
-            throw 'Drive file does not have all required fields'
-        }
-        return new McWorldFile(file.name, new Date(file.modifiedTime), file.appProperties.mcInstance, { type: 'gdrive', filedata: file })
-    }
-
-    static fromLocalData(file: BunFile) {
-        if (!hasRequiredFields.local(file)) {
-            console.log({ file: file })
-            throw 'Local file does not have all required fields'
-        }
-        const mcInstance = process.env.INST_NAME 
-        if (!mcInstance) {
-            throw 'Instance name env var not present'
-        }
-        return new McWorldFile(file.name, new Date(file.lastModified), mcInstance, { type: 'local', filedata: file })
-    }
-
-    getFileName() {
-        return this.sourceData.type == 'local' ? this.getFileNameLocal() : this.getFileNameDrive()
-    }
-
-    private getFileNameLocal() {
-        if (this.name.includes('/')) {
-            return this.name.split('/').at(-1)
-        }
-        return this.name
-    }
-
-    private getFileNameDrive() {
-        if (this.name.includes('.zip')) {
-            return this.name.substring(0, this.name.length - '.zip'.length)
-        }
-        return this.name
-    }
+    abstract getFileName(): string
 
     getType() {
         return this.sourceData.type
     }
 
-    isSameSave(other: McWorldFile) {
+    isSameSave(other: McWorldFile<SourceData>) {
         return this.getFileName() == other.getFileName() && this.instance == other.instance
     }
 
@@ -94,12 +58,67 @@ export default class McWorldFile {
 
 }
 
-class McWorldFilePair {
-    local?: McWorldFile
-    remote?: McWorldFile
+export class LocalMcWorldFile extends McWorldFile<LocalData> {
 
-    constructor(local?: McWorldFile, remote?: McWorldFile) {
-        this.local = local
-        this.remote = remote
+    constructor(name: string, lastUpdated: Date, instance: string, sourceData: LocalData) {
+        super(name, lastUpdated, instance, sourceData)
+    }
+
+    static fromFile(file: BunFile) {
+        if (!hasRequiredFields.local(file)) {
+            console.log({ file: file })
+            throw 'Local file does not have all required fields'
+        }
+        const mcInstance = process.env.INST_NAME 
+        if (!mcInstance) {
+            throw 'Instance name env var not present'
+        }
+        return new LocalMcWorldFile(file.name, new Date(file.lastModified), mcInstance, { type: 'local', filedata: file })
+    }
+
+    getFileName() {
+        if (this.name.includes('/')) {
+            return this.name.split('/').at(-1)!
+        }
+        return this.name
+    }
+
+    async zip(): Promise<Uint8Array> {
+        const arrBuffer = await this.sourceData.filedata.arrayBuffer()
+        const buffer = Buffer.from(arrBuffer)
+        return Bun.gzipSync(buffer)
     }
 }
+
+export class DriveMcWorldFile extends McWorldFile<GDriveData> {
+
+    constructor(name: string, lastUpdated: Date, instance: string, sourceData: GDriveData) {
+        super(name, lastUpdated, instance, sourceData)
+    }
+
+    static fromFile(file: drive_v3.Schema$File) {
+        if (!hasRequiredFields.gDrive(file)) {
+            console.log({ file: JSON.stringify(file, null, 2)})
+            throw 'Drive file does not have all required fields'
+        }
+        return new DriveMcWorldFile(file.name, new Date(file.modifiedTime), file.appProperties.mcInstance, { type: 'gdrive', filedata: file })
+    }
+
+    getFileName() {
+        if (this.name.includes('.zip')) {
+            return this.name.substring(0, this.name.length - '.zip'.length)
+        }
+        return this.name
+    }
+
+}
+
+// class McWorldFilePair {
+//     local?: McWorldFile
+//     remote?: McWorldFile
+
+//     constructor(local?: McWorldFile, remote?: McWorldFile) {
+//         this.local = local
+//         this.remote = remote
+//     }
+// }
