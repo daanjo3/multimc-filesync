@@ -111,14 +111,23 @@ export class DriveMcWorldFile extends McWorldFile<GDriveData> {
         return this.name
     }
 
+    async download(): Promise<ReadableStream> {
+        // TODO open the filestream
+    }
+
 }
 
-// class McWorldFilePair {
-//     local?: McWorldFile
-//     remote?: McWorldFile
+class McWorldFilePair {
+    local?: LocalMcWorldFile
+    remote?: DriveMcWorldFile
 
-//     constructor(local?: McWorldFile, remote?: McWorldFile) {
-//         this.local = local
-//         this.remote = remote
-//     }
-// }
+    constructor(local?: LocalMcWorldFile, remote?: DriveMcWorldFile) {
+        this.local = local
+        this.remote = remote
+    }
+
+    syncDown() {
+        // Download file from drive
+        // Unzip
+    }
+}

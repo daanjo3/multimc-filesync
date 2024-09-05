@@ -143,7 +143,7 @@ export async function listRemoteSaves() {
 
 async function downloadFile(fileId: string) {
   const service = await getGDriveService()
-  const file = await service.files.get({ fileId, alt: 'media' })
+  const file = await service.files.get({ fileId, alt: 'media' }, { responseType: 'stream' }) // Parse stream to file
   return file.data
 }
 
