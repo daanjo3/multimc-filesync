@@ -1,5 +1,9 @@
 import type { BunFile } from "bun";
 import type { drive_v3 } from "googleapis";
+import { downloadFile } from "./gdrive";
+import type stream from 'stream'
+import AdmZip from 'adm-zip'
+import fs from 'node:fs'
 
 type SourceType = 'gdrive' | 'local'
 type SourceFile = BunFile | drive_v3.Schema$File
@@ -83,10 +87,17 @@ export class LocalMcWorldFile extends McWorldFile<LocalData> {
         return this.name
     }
 
-    async zip(): Promise<Uint8Array> {
-        const arrBuffer = await this.sourceData.filedata.arrayBuffer()
-        const buffer = Buffer.from(arrBuffer)
-        return Bun.gzipSync(buffer)
+    getFilePath() {
+        if (!this.name.startsWith('/')) {
+            throw 'Filename is not absolute path!'
+        }
+        return this.name
+    }
+
+    zip(): Buffer {
+        const archive = new AdmZip()
+        archive.addLocalFolder(this.getFilePath())
+        return archive.toBuffer()
     }
 }
 
@@ -111,23 +122,40 @@ export class DriveMcWorldFile extends McWorldFile<GDriveData> {
         return this.name
     }
 
-    async download(): Promise<ReadableStream> {
-        // TODO open the filestream
+    async download(): Promise<Buffer> {
+        const stream = await downloadFile(this.sourceData.filedata.id!)
+        const _buff = []
+        for await (const chunk of stream) {
+            _buff.push(chunk)
+        }
+        return Buffer.from(_buff)
     }
 
 }
 
 class McWorldFilePair {
-    local?: LocalMcWorldFile
-    remote?: DriveMcWorldFile
+    local: LocalMcWorldFile
+    remote: DriveMcWorldFile
 
-    constructor(local?: LocalMcWorldFile, remote?: DriveMcWorldFile) {
+    constructor(local: LocalMcWorldFile, remote: DriveMcWorldFile) {
         this.local = local
         this.remote = remote
     }
 
-    syncDown() {
+    async syncDown() {
         // Download file from drive
-        // Unzip
+        const buffer = await this.remote.download()
+        // Remove existing local file
+        fs.rmSync(this.local.getFilePath(), { recursive: true, force: true })
+        // Unzip into target directory
+        const archive = new AdmZip(buffer)
+        archive.extractAllTo(this.local.getFilePath())
+    }
+
+    async syncUp() {
+        // Get zipped version of the folder
+        const archive = this.local.zip()
+        // TODO upload as new revision
+
     }
 }

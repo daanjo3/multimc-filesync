@@ -141,7 +141,7 @@ export async function listRemoteSaves() {
   return listDirAll().then((files) => files.filter((f) => !!f.appProperties).map((file) => DriveMcWorldFile.fromFile(file)))
 }
 
-async function downloadFile(fileId: string) {
+export async function downloadFile(fileId: string) {
   const service = await getGDriveService()
   const file = await service.files.get({ fileId, alt: 'media' }, { responseType: 'stream' }) // Parse stream to file
   return file.data
