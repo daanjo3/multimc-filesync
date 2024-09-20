@@ -8,8 +8,38 @@ function mockMultiMcVars() {
 }
 mockMultiMcVars()
 
-export function listLocalSaves(): LocalMcWorldFile[] {
-  const savesPath = `${process.env.INST_DIR}/.minecraft/saves`
+interface MultiMcContext {
+  instance: {
+    name: string
+    id: string
+    path: string
+  }
+}
+
+function getContext(): MultiMcContext {
+  // Throw if envs not present
+  if (!process.env.INST_NAME || !process.env.INST_ID || !process.env.INST_DIR) {
+    throw 'MultiMC environment variables were not present'
+  }
+  return {
+    instance: {
+      name: process.env.INST_NAME,
+      id: process.env.INST_ID,
+      path: process.env.INST_DIR,
+    },
+  }
+}
+
+function listSaves(): LocalMcWorldFile[] {
+  const { instance } = getContext()
+  const savesPath = `${instance.path}/.minecraft/saves`
   const saveNames = fs.readdirSync(savesPath)
-  return saveNames.map((saveName) => LocalMcWorldFile.fromFile(Bun.file(`${savesPath}/${saveName}`)))
+  return saveNames.map((saveName) =>
+    LocalMcWorldFile.fromFile(Bun.file(`${savesPath}/${saveName}`)),
+  )
+}
+
+export default {
+  getContext,
+  listSaves,
 }

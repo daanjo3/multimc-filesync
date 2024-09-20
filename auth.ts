@@ -4,7 +4,11 @@ import { google } from 'googleapis'
 import type { OAuth2Client } from 'google-auth-library'
 
 // TODO use a more restrictive scope
-const SCOPES = ['https://www.googleapis.com/auth/drive']
+const SCOPES = [
+  'https://www.googleapis.com/auth/drive',
+  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/drive.metadata',
+]
 
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first

@@ -1,5 +1,7 @@
 import { parseArgs } from 'util'
-import { createFile } from '../gdrive'
+import { uploadFile } from '../gdrive'
+import fs from 'node:fs'
+import path from 'node:path'
 
 const { values } = parseArgs({
   args: Bun.argv,
@@ -21,14 +23,15 @@ if (!values.input) {
   console.log('Missing input')
   process.exit(1)
 }
-const input = values.input
+const fp = values.input
 const type = values.type ?? 'master'
 
-const file = Bun.file(input)
-if (!(await file.exists())) {
-  console.log(`File ${file} does not exist`)
+if (fs.existsSync(fp)) {
+  console.log(`File ${fp} does not exist`)
   process.exit(1)
 }
+const filename = path.basename(fp)
+const fileStream = fs.createReadStream(fp)
 
 const MCNAME = 'TestWorld'
 const MCHOST = 'TestHost'
@@ -36,15 +39,15 @@ const MCINSTANCE = 'FakeTestInstance'
 
 // TODO file.name returns a path instead of a name
 if (type == 'master') {
-  createFile(file, file.name ?? MCNAME, {
+  uploadFile(fileStream, filename ?? MCNAME, {
     mcInstance: MCINSTANCE,
     mcType: type,
-  }).then((r) => console.log(r.data))
+  }).then((data) => console.log(data))
 }
 if (type == 'proxy') {
-  createFile(file, file.name ?? MCNAME, {
+  uploadFile(fileStream, filename ?? MCNAME, {
     mcInstance: MCINSTANCE,
     mcHost: MCHOST,
     mcType: type,
-  }).then((r) => console.log(r.data))
+  }).then((data) => console.log(data))
 }

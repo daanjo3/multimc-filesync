@@ -1,7 +1,7 @@
 import { type drive_v3, google } from 'googleapis'
 import authorize from './auth'
 import type { GaxiosResponse } from 'gaxios'
-import type { BunFile } from 'bun'
+import { Readable } from 'node:stream'
 import { DriveMcWorldFile } from './McWorldFile'
 
 const DIRNAME_MC_SYNC = 'MinecraftSync'
@@ -52,7 +52,31 @@ async function createDir(dirName: string, parents?: string[]): Promise<string> {
   }
 }
 
-async function listDir(q: string): Promise<drive_v3.Schema$File[]> {
+const q_inMcDir = (dirId: string) => `'${dirId}' in parents`
+const q_instance = (instance: string) =>
+  `appProperties has { key='mcInstance' and value='${instance}'}`
+const q_host = (hostname: string) =>
+  `appProperties has { key='mcHost' and value='${hostname}'}`
+const q_type = (type: 'proxy' | 'master') =>
+  `appProperties has { key='mcType' and value='${type}'}`
+
+async function searchFiles(opts?: {
+  instance?: string
+  host?: string
+  type?: 'master' | 'proxy'
+}): Promise<DriveMcWorldFile[]> {
+  const dirId = await getOrCreateMinecraftSyncDir()
+  const query = [q_inMcDir(dirId)]
+  if (opts?.host) query.push(q_host(opts.host))
+  if (opts?.instance) query.push(q_instance(opts.instance))
+  if (opts?.type) query.push(q_type(opts.type))
+
+  return executeSearchFiles(query.join(' and ')).then((files) =>
+    files.map(DriveMcWorldFile.fromFile),
+  )
+}
+
+async function executeSearchFiles(q: string): Promise<drive_v3.Schema$File[]> {
   const service = await getGDriveService()
   const files = []
 
@@ -67,6 +91,7 @@ async function listDir(q: string): Promise<drive_v3.Schema$File[]> {
     files.push(...data.files)
   }
   while (data?.nextPageToken) {
+    console.log('Resolving more pages')
     const res: GaxiosResponse<drive_v3.Schema$FileList> =
       await service.files.list({ pageToken: data.nextPageToken })
     data = res.data
@@ -74,20 +99,8 @@ async function listDir(q: string): Promise<drive_v3.Schema$File[]> {
       files.push(...data.files)
     }
   }
+  // console.debug("Found files:\n"+files.map(f => JSON.stringify(f, null, 2)).join('\n'))
   return files
-}
-
-async function listDirAll(): Promise<drive_v3.Schema$File[]> {
-  return listDir(`'${DIRNAME_MC_SYNC}' in parents`)
-}
-
-async function getInstanceMasterRef(instanceId: string): Promise<drive_v3.Schema$File | null> {
-  const files = await listDir(`appProperties has { key='mcInstance' and value='${instanceId}'} and appProperties has { key='mcType' and value='master'}`)
-  if (files.length != 1) {
-    console.error('Getting instance master file did not result into a single file', { files })
-    return null
-  }
-  return files[0]
 }
 
 async function getOrCreateMinecraftSyncDir(): Promise<string> {
@@ -106,11 +119,12 @@ type CreateProperties = { mcInstance: string } & (
   | { mcHost: string; mcType: 'proxy' }
   | { mcType: 'master' }
 )
-export async function createFile(
-  file: BunFile,
+
+export async function uploadFile(
+  stream: Readable,
   name: string,
   appProperties: CreateProperties,
-) {
+): Promise<drive_v3.Schema$File> {
   const service = await getGDriveService()
   const dirId = await getOrCreateMinecraftSyncDir()
 
@@ -121,52 +135,35 @@ export async function createFile(
   }
   const media = {
     mimeType: 'application/zip',
-    body: file.readable,
+    body: stream,
   }
 
   try {
-    const file = await service.files.create({
+    const response = await service.files.create({
       requestBody: fileMetadata,
       media,
       fields: 'id, name, appProperties',
     })
-    return file
+    if (response.status != 201 && response.status != 200) {
+      throw response.statusText
+    }
+    return response.data
   } catch (err) {
     throw `Failed to create file\nerr=${err}`
   }
 }
 
-export async function listRemoteSaves() {
-  // const dirId = await getOrCreateMinecraftSyncDir()
-  return listDirAll().then((files) => files.filter((f) => !!f.appProperties).map((file) => DriveMcWorldFile.fromFile(file)))
-}
-
 export async function downloadFile(fileId: string) {
   const service = await getGDriveService()
-  const file = await service.files.get({ fileId, alt: 'media' }, { responseType: 'stream' }) // Parse stream to file
+  const file = await service.files.get(
+    { fileId, alt: 'media' },
+    { responseType: 'stream' },
+  ) // Parse stream to file
   return file.data
 }
 
-// Create proxy file (or add revision)
-// Update master file (by evaluating proxies)
-
-// Download latest master file
-export async function getMasterFileIndex(instance: string) {
-  try {
-    const instanceMasterRef = await getInstanceMasterRef(instance)
-    if (!instanceMasterRef) {
-      console.error(`Failed to fetch master ref of instance ${instance}`)
-      return null
-    }
-    const instanceData = await downloadFile(instanceMasterRef.id!)
-    if (!instanceData) {
-      console.error(`Failed to download master ref with id ${instanceMasterRef.id} of instance ${instance}`)
-      return null
-    }
-  } catch (err) {
-    throw err
-  }
+export default {
+  searchFiles,
+  uploadFile,
+  downloadFile,
 }
-
-// getMasterFileIndex('FakeTestInstance')
-listRemoteSaves()

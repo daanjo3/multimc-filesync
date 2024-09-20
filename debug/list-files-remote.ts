@@ -1,3 +1,11 @@
-import { listRemoteSaves } from '../gdrive'
+import gdrive from '../gdrive'
+import { DriveMcWorldFile } from '../McWorldFile'
 
-listRemoteSaves().then((files) => console.log(files))
+gdrive
+  .searchFiles()
+  .then((files) =>
+    files
+      .filter((f) => !!f.appProperties)
+      .map((file) => DriveMcWorldFile.fromFile(file)),
+  )
+  .then((files) => console.log(files))
