@@ -1,30 +1,12 @@
 import multimc from './multimc'
 import gdrive from './gdrive'
+import system from './system'
 import { Readable } from 'node:stream'
-import cp from 'child_process'
-import os from 'os'
-import { DriveMcWorldFile } from './McWorldFile'
-
-function getComputerName(): string {
-  switch (process.platform) {
-    case 'win32':
-      const winComputerName = process.env.COMPUTERNAME
-      if (!winComputerName) {
-        throw 'Windows computer name could not be found'
-      }
-      return winComputerName
-    case 'linux':
-      const prettyname = cp.execSync('hostnamectl --pretty').toString().trim()
-      return prettyname === '' ? os.hostname() : prettyname
-    default:
-      return os.hostname()
-  }
-}
 
 async function syncUp() {
   // 1. List all local and remote master files
   const { instance } = multimc.getContext()
-  const hostname = getComputerName()
+  const hostname = system.getName()
 
   const localFiles = await multimc.listSaves()
   console.log(
@@ -46,26 +28,29 @@ async function syncUp() {
   // Update proxies on remote
   for (const localFile of localFiles) {
     const remoteFile = remoteProxyFiles.find((rf) => rf.isSameSave(localFile))
-    if (remoteFile && remoteFile.isNewerThan(localFile)) {
-      console.log(
-        `Skipping updating remote (${remoteFile.lastUpdated.toLocaleDateString()}) as it is newer than local (${remoteFile.lastUpdated.toLocaleDateString()})`,
+    if (remoteFile) {
+      if (remoteFile.isNewerThan(localFile)) {
+        console.log(
+          `Skipping updating remote (${remoteFile.lastUpdated.toLocaleDateString()}) as it is newer than local (${remoteFile.lastUpdated.toLocaleDateString()})`,
+        )
+        continue
+      }
+      // TODO update file
+    } else {
+      const stream = Readable.from(localFile.zip())
+      const uploadedFile = await gdrive.uploadFile(
+        stream,
+        localFile.getFileName() + '.zip',
+        { mcHost: hostname, mcInstance: instance.id, mcType: 'proxy' },
       )
-      continue
+      console.log(
+        `uploaded proxy file ${localFile.getFileName()} which has now ID ${uploadedFile.id}`,
+        { appProperties: uploadedFile.appProperties },
+      )
+      // TODO Update metadata on remote file
     }
-    const stream = Readable.from(localFile.zip())
-    const uploadedFile = await gdrive.uploadFile(
-      stream,
-      localFile.getFileName() + '.zip',
-      { mcHost: hostname, mcInstance: instance.id, mcType: 'proxy' },
-    )
-    console.log(
-      `uploaded proxy file ${localFile.getFileName()} which has now ID ${uploadedFile.id}`,
-      { appProperties: uploadedFile.appProperties },
-    )
-    // TODO Update metadata on remote file
+    // TODO Update master from proxies
   }
-
-  // TODO Update master from proxies
 }
 
 function syncDown() {

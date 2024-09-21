@@ -120,6 +120,7 @@ type CreateProperties = { mcInstance: string } & (
   | { mcType: 'master' }
 )
 
+// TODO change to make use of resumable update
 export async function uploadFile(
   stream: Readable,
   name: string,
@@ -144,12 +145,37 @@ export async function uploadFile(
       media,
       fields: 'id, name, appProperties',
     })
-    if (response.status != 201 && response.status != 200) {
+    if (response.status != 201) {
       throw response.statusText
     }
     return response.data
   } catch (err) {
     throw `Failed to create file\nerr=${err}`
+  }
+}
+
+// TODO change to make use of resumable update
+export async function updateFile(
+  stream: Readable,
+  fileId: string,
+): Promise<drive_v3.Schema$File> {
+  const service = await getGDriveService()
+
+  const media = {
+    mimeType: 'application/zip',
+    body: stream,
+  }
+  try {
+    const response = await service.files.update({
+      media,
+      fields: 'id, name, appProperties',
+    })
+    if (response.status != 200) {
+      throw response.statusText
+    }
+    return response.data
+  } catch (err) {
+    throw `Failed to update file ${fileId}\nerr=${err}`
   }
 }
 
@@ -165,5 +191,6 @@ export async function downloadFile(fileId: string) {
 export default {
   searchFiles,
   uploadFile,
+  updateFile,
   downloadFile,
 }
