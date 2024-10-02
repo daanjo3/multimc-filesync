@@ -127,6 +127,7 @@ export class LocalMcWorldFile extends McWorldFile<LocalData> {
     return this.name
   }
 
+  // Also include JourneyMap data in main instance folder if present
   zip(): Buffer {
     const archive = new AdmZip()
     archive.addLocalFolder(this.getFilePath())
