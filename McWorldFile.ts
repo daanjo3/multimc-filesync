@@ -1,8 +1,9 @@
 import type { BunFile } from 'bun'
 import type { drive_v3 } from 'googleapis'
-import { downloadFile } from './gdrive'
+import { Readable } from 'node:stream'
+import gdrive, { type CreateProperties } from './gdrive'
 import AdmZip from 'adm-zip'
-import fs from 'node:fs'
+import path from 'node:path'
 
 type SourceType = 'gdrive' | 'local'
 type SourceFile = BunFile | drive_v3.Schema$File
@@ -21,8 +22,6 @@ interface GDriveAppProperties {
 type DriveMcFile = drive_v3.Schema$File & {
   appProperties: GDriveAppProperties
 } & { name: string; modifiedTime: string }
-type GDriveData = SourceData<'gdrive', DriveMcFile>
-type LocalData = SourceData<'local', BunFile>
 
 const hasRequiredFields = {
   gDrive: (file: drive_v3.Schema$File): file is DriveMcFile =>
@@ -37,38 +36,49 @@ const hasRequiredFields = {
     !!file.lastModified && !!file.name,
 }
 
-export abstract class McWorldFile<SD extends SourceData> {
+export abstract class McWorldFile<SF extends SourceFile> {
   name: string
   lastUpdated: Date
   instance: string
-  sourceData: SD
+  type: SourceType
+  data: SF
 
   constructor(
     name: string,
     lastUpdated: Date,
     instance: string,
-    sourceData: SD,
+    type: SourceType,
+    data: SF,
   ) {
     this.name = name
     this.lastUpdated = lastUpdated
     this.instance = instance
-    this.sourceData = sourceData
+    this.type = type
+    this.data = data
   }
 
   abstract getFileName(): string
 
-  getSource() {
-    return this.sourceData.type
+  getData(): SF {
+    return this.data
   }
 
-  isSameSave(other: McWorldFile<SourceData>) {
-    return (
-      this.getFileName() == other.getFileName() &&
-      this.instance == other.instance
+  getSource(): SourceType {
+    return this.type
+  }
+
+  isSameSave(other: McWorldFile<SourceFile>): boolean {
+    const sameName = this.getFileName() == other.getFileName()
+    const sameInstance = this.instance == other.instance
+    const sameFile = sameName && sameInstance
+    console.debug(`File is equal: ${sameFile}`, 
+      { this: { name: this.getFileName(), instance: this.instance }},
+      { other: { name: other.getFileName(), instance: other.instance }}
     )
+    return sameFile
   }
 
-  isNewerThan(other: McWorldFile<SourceData>) {
+  isNewerThan(other: McWorldFile<SourceFile>) {
     return this.lastUpdated > other.lastUpdated
   }
 
@@ -86,14 +96,14 @@ export abstract class McWorldFile<SD extends SourceData> {
   }
 }
 
-export class LocalMcWorldFile extends McWorldFile<LocalData> {
+export class LocalMcWorldFile extends McWorldFile<BunFile> {
   constructor(
     name: string,
     lastUpdated: Date,
     instance: string,
-    sourceData: LocalData,
+    data: BunFile,
   ) {
-    super(name, lastUpdated, instance, sourceData)
+    super(name, lastUpdated, instance, 'local', data)
   }
 
   static fromFile(file: BunFile) {
@@ -109,15 +119,12 @@ export class LocalMcWorldFile extends McWorldFile<LocalData> {
       file.name,
       new Date(file.lastModified),
       mcInstance,
-      { type: 'local', filedata: file },
+      file
     )
   }
 
   getFileName() {
-    if (this.name.includes('/')) {
-      return this.name.split('/').at(-1)!
-    }
-    return this.name
+    return path.basename(this.name)
   }
 
   getFilePath() {
@@ -128,21 +135,21 @@ export class LocalMcWorldFile extends McWorldFile<LocalData> {
   }
 
   // Also include JourneyMap data in main instance folder if present
-  zip(): Buffer {
+  zip(): Readable {
     const archive = new AdmZip()
     archive.addLocalFolder(this.getFilePath())
-    return archive.toBuffer()
+    return Readable.from(archive.toBuffer())
   }
 }
 
-export class DriveMcWorldFile extends McWorldFile<GDriveData> {
+export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
   constructor(
     name: string,
     lastUpdated: Date,
     instance: string,
-    sourceData: GDriveData,
+    file: drive_v3.Schema$File
   ) {
-    super(name, lastUpdated, instance, sourceData)
+    super(name, lastUpdated, instance, 'gdrive', file)
   }
 
   static fromFile(file: drive_v3.Schema$File) {
@@ -154,12 +161,44 @@ export class DriveMcWorldFile extends McWorldFile<GDriveData> {
       file.name,
       new Date(file.modifiedTime),
       file.appProperties.mcInstance,
-      { type: 'gdrive', filedata: file },
+      file
     )
   }
 
+  static async create(stream: Readable, name: string, appProperties: CreateProperties): Promise<DriveMcWorldFile> {
+    try {
+      const newFile = await gdrive.uploadFile(stream, name, appProperties)
+      const newWorldFile = this.fromFile(newFile)
+      console.log(`Created new file ${newWorldFile.getFileName()}`, { meta: newWorldFile.getMeta() })
+      return newWorldFile
+    } catch (err) {
+      throw `Failed to upload new save file\nerr: ${err}`
+    }
+  }
+
+  async download(): Promise<Buffer> {
+    const stream = await gdrive.downloadFile(this.data.id!)
+    const _buff = []
+    for await (const chunk of stream) {
+      _buff.push(chunk)
+    }
+    console.log(`Downloaded file ${this.getFileName()}`, { meta: this.getMeta() })
+    return Buffer.from(_buff)
+  }
+
+  async update(stream: Readable): Promise<DriveMcWorldFile> {
+    try {
+      const updatedFile = await gdrive.updateFile(stream, this.data.id!)
+      this.data = updatedFile
+      console.log(`Updated file ${this.getFileName()}`, { meta: this.getMeta() })
+      return this
+    } catch (err) {
+      throw `Failed to update file\nerr: ${err}`
+    }
+  }
+
   getType(): 'proxy' | 'master' {
-    const type = this.sourceData.filedata.appProperties.mcType
+    const type = this.data.appProperties!.mcType
     if (!type) {
       throw 'app property "type" was not present'
     }
@@ -176,38 +215,12 @@ export class DriveMcWorldFile extends McWorldFile<GDriveData> {
     return this.name
   }
 
-  async download(): Promise<Buffer> {
-    const stream = await downloadFile(this.sourceData.filedata.id!)
-    const _buff = []
-    for await (const chunk of stream) {
-      _buff.push(chunk)
+  getMeta(): Record<string, any> {
+    return {
+      'name': this.getFileName(),
+      'id': this.data.id!,
+      'modifiedTime': this.data.modifiedTime,
+      'appProperties': this.data.appProperties
     }
-    return Buffer.from(_buff)
-  }
-}
-
-class McWorldFilePair {
-  local: LocalMcWorldFile
-  remote: DriveMcWorldFile
-
-  constructor(local: LocalMcWorldFile, remote: DriveMcWorldFile) {
-    this.local = local
-    this.remote = remote
-  }
-
-  async syncDown() {
-    // Download file from drive
-    const buffer = await this.remote.download()
-    // Remove existing local file
-    fs.rmSync(this.local.getFilePath(), { recursive: true, force: true })
-    // Unzip into target directory
-    const archive = new AdmZip(buffer)
-    archive.extractAllTo(this.local.getFilePath())
-  }
-
-  async syncUp() {
-    // Get zipped version of the folder
-    const archive = this.local.zip()
-    // TODO upload as new revision
   }
 }

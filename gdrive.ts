@@ -6,6 +6,8 @@ import { DriveMcWorldFile } from './McWorldFile'
 
 const DIRNAME_MC_SYNC = 'MinecraftSync'
 
+let MC_DIR_ID = ''
+
 const getGDriveService = async () =>
   authorize().then((auth) => google.drive({ version: 'v3', auth }))
 
@@ -99,23 +101,26 @@ async function executeSearchFiles(q: string): Promise<drive_v3.Schema$File[]> {
       files.push(...data.files)
     }
   }
-  // console.debug("Found files:\n"+files.map(f => JSON.stringify(f, null, 2)).join('\n'))
+  console.debug("Found files:\n"+files.map(f => JSON.stringify(f, null, 2)).join('\n'))
   return files
 }
 
 async function getOrCreateMinecraftSyncDir(): Promise<string> {
+  if (MC_DIR_ID) {
+    return MC_DIR_ID
+  }
   console.log(`Fetching or creating dir ${DIRNAME_MC_SYNC}`)
   let dirId = await getExistingDir(DIRNAME_MC_SYNC)
   if (dirId != null) {
     console.log(`Found pre-existing directory with id: ${dirId}`)
     return dirId
   }
-  dirId = await createDir(DIRNAME_MC_SYNC)
+  MC_DIR_ID = await createDir(DIRNAME_MC_SYNC)
   console.log(`Created new directory with id: ${dirId}`)
-  return dirId
+  return MC_DIR_ID
 }
 
-type CreateProperties = { mcInstance: string } & (
+export type CreateProperties = { mcInstance: string } & (
   | { mcHost: string; mcType: 'proxy' }
   | { mcType: 'master' }
 )
@@ -143,9 +148,10 @@ export async function uploadFile(
     const response = await service.files.create({
       requestBody: fileMetadata,
       media,
-      fields: 'id, name, appProperties',
+      fields: 'id, name, modifiedTime, appProperties',
     })
-    if (response.status != 201) {
+    // GDrive returns a 200 OK when creating a file for some reason?
+    if (response.status != 200) {
       throw response.statusText
     }
     return response.data
@@ -167,8 +173,9 @@ export async function updateFile(
   }
   try {
     const response = await service.files.update({
+      fileId,
       media,
-      fields: 'id, name, appProperties',
+      fields: 'id, name, modifiedTime, appProperties',
     })
     if (response.status != 200) {
       throw response.statusText
