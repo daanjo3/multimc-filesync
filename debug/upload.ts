@@ -1,5 +1,5 @@
 import { parseArgs } from 'util'
-import gdrive from '../src/gdrive'
+import gdrive from '../src/gdrive/gdrive'
 import fs from 'node:fs'
 import path from 'node:path'
 import { DriveMcWorldFile, LocalMcWorldFile } from '../src/McWorldFile'

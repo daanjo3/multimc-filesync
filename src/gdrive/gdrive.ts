@@ -1,12 +1,17 @@
 import { type drive_v3, google } from 'googleapis'
-import authorize from './auth'
 import type { GaxiosResponse } from 'gaxios'
 import { Readable } from 'node:stream'
-import { DriveMcWorldFile } from './McWorldFile'
 
-const DIRNAME_MC_SYNC = 'MinecraftSync'
+import authorize from './auth'
+import config from '../config'
+import { DriveMcWorldFile } from '../McWorldFile'
 
 let MC_DIR_ID = ''
+
+export type CreateProperties = { mcInstance: string } & (
+  | { mcHost: string; mcType: 'proxy' }
+  | { mcType: 'master' }
+)
 
 const getGDriveService = async () =>
   authorize().then((auth) => google.drive({ version: 'v3', auth }))
@@ -36,7 +41,7 @@ async function getExistingDir(dirName: string): Promise<string | null> {
 async function createDir(dirName: string, parents?: string[]): Promise<string> {
   const service = await getGDriveService()
   const fileMetadata = {
-    name: DIRNAME_MC_SYNC,
+    name: config.drive.baseDirName,
     mimeType: 'application/vnd.google-apps.folder',
     parents,
   }
@@ -111,21 +116,16 @@ async function getOrCreateMinecraftSyncDir(): Promise<string> {
   if (MC_DIR_ID) {
     return MC_DIR_ID
   }
-  console.log(`Fetching or creating dir ${DIRNAME_MC_SYNC}`)
-  let dirId = await getExistingDir(DIRNAME_MC_SYNC)
+  console.log(`Fetching or creating dir ${config.drive.baseDirName}`)
+  let dirId = await getExistingDir(config.drive.baseDirName)
   if (dirId != null) {
     console.log(`Found pre-existing directory with id: ${dirId}`)
     return dirId
   }
-  MC_DIR_ID = await createDir(DIRNAME_MC_SYNC)
+  MC_DIR_ID = await createDir(config.drive.baseDirName)
   console.log(`Created new directory with id: ${dirId}`)
   return MC_DIR_ID
 }
-
-export type CreateProperties = { mcInstance: string } & (
-  | { mcHost: string; mcType: 'proxy' }
-  | { mcType: 'master' }
-)
 
 // TODO change to make use of resumable update
 export async function uploadFile(

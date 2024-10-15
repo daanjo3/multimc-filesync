@@ -1,7 +1,10 @@
+import './init'
 import multimc from './multimc'
-import gdrive from './gdrive'
+import gdrive from './gdrive/gdrive'
 import system from './system'
+import process from 'process'
 import { DriveMcWorldFile, type LocalMcWorldFile } from './McWorldFile'
+import { parseArgs } from 'util'
 
 async function syncUp() {
   // 1. List all local and remote master files
@@ -76,11 +79,31 @@ async function syncUpFile(
   }
 }
 
-function syncDown() {
+async function syncDown() {
   // 1. List all local and remote proxy files
   // 2. Update remote proxy files where local file is newer
   // 3. Upload any local files for which there is no remote proxy file
   // 4. Update any master file where the proxy file is newer
 }
 
-syncUp()
+const { positionals } = parseArgs({
+  args: Bun.argv,
+  allowPositionals: true,
+})
+
+if (positionals.length < 3) {
+  throw 'Missing parameter `up` or `down`'
+}
+if (positionals.length > 3) {
+  throw 'Too many arguments'
+}
+switch (positionals[2]) {
+  case 'up':
+    await syncUp()
+    process.exit()
+  case 'down':
+    await syncDown()
+    process.exit()
+  default:
+    throw 'command argument must be `up` or `down`'
+}
