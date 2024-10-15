@@ -1,7 +1,8 @@
 import { createLogger, format, transports } from 'winston'
+import config from './config'
 const { combine, timestamp, prettyPrint } = format
 
-const path = `/home/daanjo3/projects/multimc-filesync/out/file.log`
+const filename = `${config.baseDir}/mmc_filesync.log`
 
 const logger = createLogger({
   level: 'info',
@@ -10,7 +11,7 @@ const logger = createLogger({
     prettyPrint()
   ),
   transports: [
-    new transports.File({ filename: path })
+    new transports.File({ filename })
   ]
 })
 

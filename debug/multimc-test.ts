@@ -1,6 +1,9 @@
+import '../init'
 import { parseArgs } from 'util'
 import multimc from '../multimc'
 import logger from '../logger'
+
+// Test file to verify MultiMC running this script
 
 const { positionals } = parseArgs({
   args: Bun.argv,
@@ -21,3 +24,5 @@ logger.info('environments', {
     javaArgs: process.env.INST_JAVA_ARGS,
   },
 })
+
+logger.info('config (lastLaunchTime)', multimc.cfg().get('lastLaunchTime'))

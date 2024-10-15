@@ -1,6 +1,11 @@
-
+# Dirs with temporary content
 node_modules/
-credentials.json
-token.json
 data/
 out/
+
+# Secret stuff
+credentials.json
+token.json
+
+# Local variables
+.env.local
