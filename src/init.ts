@@ -8,6 +8,9 @@ if (!config.baseDir) {
 
 // Ensure the multimc-filesync directory exists
 if (!fs.existsSync(config.baseDir)) {
-  console.log(`Creating directory ${config.baseDir}`)
   fs.mkdirSync(config.baseDir, { recursive: false })
+}
+
+if (config.clearLogOnStart && fs.existsSync(config.logFilePath)) {
+  fs.truncateSync(config.logFilePath)
 }
