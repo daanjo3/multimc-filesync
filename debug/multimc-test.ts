@@ -25,4 +25,6 @@ logger.info('environments', {
   },
 })
 
-logger.info('config (lastLaunchTime)', { lastLaunchTime: multimc.cfg().get('lastLaunchTime')})
+logger.info('config (lastLaunchTime)', {
+  lastLaunchTime: multimc.cfg().get('lastLaunchTime'),
+})

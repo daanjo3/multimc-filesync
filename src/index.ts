@@ -27,13 +27,21 @@ async function syncUp() {
 
   // Update proxies on remote
   for (const localFile of localFiles) {
-    const remoteProxyFile = remoteProxyFiles.find((rf) => rf.isSameSave(localFile))
-    const remoteMasterFile = remoteMasterFiles.find((rf) => rf.isSameSave(localFile))
+    const remoteProxyFile = remoteProxyFiles.find((rf) =>
+      rf.isSameSave(localFile),
+    )
+    const remoteMasterFile = remoteMasterFiles.find((rf) =>
+      rf.isSameSave(localFile),
+    )
     await syncUpFile(localFile, remoteProxyFile, remoteMasterFile)
   }
 }
 
-async function syncUpFile(localFile: LocalMcWorldFile, remoteProxyFile: DriveMcWorldFile | undefined, remoteMasterFile: DriveMcWorldFile | undefined) {
+async function syncUpFile(
+  localFile: LocalMcWorldFile,
+  remoteProxyFile: DriveMcWorldFile | undefined,
+  remoteMasterFile: DriveMcWorldFile | undefined,
+) {
   if (remoteProxyFile && remoteProxyFile.isNewerThan(localFile)) {
     console.log(
       `Skipping updating remote (${remoteProxyFile.lastUpdated.toLocaleDateString()}) as it is newer than local (${remoteProxyFile.lastUpdated.toLocaleDateString()})`,
@@ -49,11 +57,11 @@ async function syncUpFile(localFile: LocalMcWorldFile, remoteProxyFile: DriveMcW
     await remoteProxyFile.update(localFile.zip())
   } else {
     console.log(`Creating new proxy file: ${localFile.getFileName()}`)
-    DriveMcWorldFile.create(
-      localFile.zip(), 
-      localFile.getFileName(), 
-      { mcHost: hostname, mcInstance: instance.id, mcType: 'proxy' }
-    )
+    DriveMcWorldFile.create(localFile.zip(), localFile.getFileName(), {
+      mcHost: hostname,
+      mcInstance: instance.id,
+      mcType: 'proxy',
+    })
   }
 
   if (remoteMasterFile) {
@@ -61,11 +69,10 @@ async function syncUpFile(localFile: LocalMcWorldFile, remoteProxyFile: DriveMcW
     await remoteMasterFile.update(localFile.zip())
   } else {
     console.log(`Creating new master file: ${localFile.getFileName()}`)
-    DriveMcWorldFile.create(
-      localFile.zip(),
-      localFile.getFileName(), 
-      { mcInstance: instance.id, mcType: 'master' }
-    )
+    DriveMcWorldFile.create(localFile.zip(), localFile.getFileName(), {
+      mcInstance: instance.id,
+      mcType: 'master',
+    })
   }
 }
 

@@ -4,8 +4,10 @@ import { LocalMcWorldFile } from './McWorldFile'
 function mockMultiMcVars() {
   process.env.INST_NAME = '1.19.2'
   process.env.INST_ID = '1.19.2'
-  process.env.INST_DIR = '/home/daanjo3/.local/share/multimc/instances/1.19.2',
-  process.env.INST_MC_DIR = '/home/daanjo3/.local/share/multimc/instances/1.19.2'
+  ;(process.env.INST_DIR =
+    '/home/daanjo3/.local/share/multimc/instances/1.19.2'),
+    (process.env.INST_MC_DIR =
+      '/home/daanjo3/.local/share/multimc/instances/1.19.2')
 }
 // mockMultiMcVars()
 
@@ -20,7 +22,12 @@ interface MultiMcContext {
 
 function getContext(): MultiMcContext {
   // Throw if envs not present
-  if (!process.env.INST_NAME || !process.env.INST_ID || !process.env.INST_DIR || !process.env.INST_MC_DIR) {
+  if (
+    !process.env.INST_NAME ||
+    !process.env.INST_ID ||
+    !process.env.INST_DIR ||
+    !process.env.INST_MC_DIR
+  ) {
     throw 'MultiMC environment variables were not present'
   }
   return {
@@ -28,7 +35,7 @@ function getContext(): MultiMcContext {
       name: process.env.INST_NAME,
       id: process.env.INST_ID,
       instPath: process.env.INST_DIR,
-      mcPath: process.env.INST_MC_DIR
+      mcPath: process.env.INST_MC_DIR,
     },
   }
 }
@@ -58,15 +65,17 @@ function cfg() {
   if (!cfgMap) {
     cfgMap = load()
   }
-  
+
   return {
     get: (key: string) => cfgMap!.get(key),
-    refresh: () => { cfgMap = load() }
+    refresh: () => {
+      cfgMap = load()
+    },
   }
 }
 
 export default {
   getContext,
   listSaves,
-  cfg
+  cfg,
 }

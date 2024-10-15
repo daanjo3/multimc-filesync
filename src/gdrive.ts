@@ -101,7 +101,9 @@ async function executeSearchFiles(q: string): Promise<drive_v3.Schema$File[]> {
       files.push(...data.files)
     }
   }
-  console.debug("Found files:\n"+files.map(f => JSON.stringify(f, null, 2)).join('\n'))
+  console.debug(
+    'Found files:\n' + files.map((f) => JSON.stringify(f, null, 2)).join('\n'),
+  )
   return files
 }
 

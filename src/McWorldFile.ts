@@ -71,9 +71,10 @@ export abstract class McWorldFile<SF extends SourceFile> {
     const sameName = this.getFileName() == other.getFileName()
     const sameInstance = this.instance == other.instance
     const sameFile = sameName && sameInstance
-    console.debug(`File is equal: ${sameFile}`, 
-      { this: { name: this.getFileName(), instance: this.instance }},
-      { other: { name: other.getFileName(), instance: other.instance }}
+    console.debug(
+      `File is equal: ${sameFile}`,
+      { this: { name: this.getFileName(), instance: this.instance } },
+      { other: { name: other.getFileName(), instance: other.instance } },
     )
     return sameFile
   }
@@ -119,7 +120,7 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
       file.name,
       new Date(file.lastModified),
       mcInstance,
-      file
+      file,
     )
   }
 
@@ -147,7 +148,7 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
     name: string,
     lastUpdated: Date,
     instance: string,
-    file: drive_v3.Schema$File
+    file: drive_v3.Schema$File,
   ) {
     super(name, lastUpdated, instance, 'gdrive', file)
   }
@@ -161,15 +162,21 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
       file.name,
       new Date(file.modifiedTime),
       file.appProperties.mcInstance,
-      file
+      file,
     )
   }
 
-  static async create(stream: Readable, name: string, appProperties: CreateProperties): Promise<DriveMcWorldFile> {
+  static async create(
+    stream: Readable,
+    name: string,
+    appProperties: CreateProperties,
+  ): Promise<DriveMcWorldFile> {
     try {
       const newFile = await gdrive.uploadFile(stream, name, appProperties)
       const newWorldFile = this.fromFile(newFile)
-      console.log(`Created new file ${newWorldFile.getFileName()}`, { meta: newWorldFile.getMeta() })
+      console.log(`Created new file ${newWorldFile.getFileName()}`, {
+        meta: newWorldFile.getMeta(),
+      })
       return newWorldFile
     } catch (err) {
       throw `Failed to upload new save file\nerr: ${err}`
@@ -182,7 +189,9 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
     for await (const chunk of stream) {
       _buff.push(chunk)
     }
-    console.log(`Downloaded file ${this.getFileName()}`, { meta: this.getMeta() })
+    console.log(`Downloaded file ${this.getFileName()}`, {
+      meta: this.getMeta(),
+    })
     return Buffer.from(_buff)
   }
 
@@ -190,7 +199,9 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
     try {
       const updatedFile = await gdrive.updateFile(stream, this.data.id!)
       this.data = updatedFile
-      console.log(`Updated file ${this.getFileName()}`, { meta: this.getMeta() })
+      console.log(`Updated file ${this.getFileName()}`, {
+        meta: this.getMeta(),
+      })
       return this
     } catch (err) {
       throw `Failed to update file\nerr: ${err}`
@@ -217,10 +228,10 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
 
   getMeta(): Record<string, any> {
     return {
-      'name': this.getFileName(),
-      'id': this.data.id!,
-      'modifiedTime': this.data.modifiedTime,
-      'appProperties': this.data.appProperties
+      name: this.getFileName(),
+      id: this.data.id!,
+      modifiedTime: this.data.modifiedTime,
+      appProperties: this.data.appProperties,
     }
   }
 }

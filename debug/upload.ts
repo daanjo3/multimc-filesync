@@ -44,7 +44,11 @@ process.env.INST_NAME = MCINSTANCE
 const dirname = path.resolve(fp)
 const file = LocalMcWorldFile.fromFile(Bun.file(dirname))
 
-const existing = await gdrive.searchFiles({ instance: MCINSTANCE, host: MCHOST, type: 'proxy' })
+const existing = await gdrive.searchFiles({
+  instance: MCINSTANCE,
+  host: MCHOST,
+  type: 'proxy',
+})
 const existingRemote = existing.find((f) => f.isSameSave(file))
 if (existingRemote) {
   await existingRemote.update(file.zip())
