@@ -1,7 +1,7 @@
-import '../init'
+import '../src/init'
 import { parseArgs } from 'util'
-import multimc from '../multimc'
-import logger from '../logger'
+import multimc from '../src/multimc'
+import logger from '../src/logger'
 
 // Test file to verify MultiMC running this script
 
@@ -25,4 +25,4 @@ logger.info('environments', {
   },
 })
 
-logger.info('config (lastLaunchTime)', multimc.cfg().get('lastLaunchTime'))
+logger.info('config (lastLaunchTime)', { lastLaunchTime: multimc.cfg().get('lastLaunchTime')})

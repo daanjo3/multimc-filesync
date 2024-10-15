@@ -1,8 +1,8 @@
 import { parseArgs } from 'util'
-import gdrive from '../gdrive'
+import gdrive from '../src/gdrive'
 import fs from 'node:fs'
 import path from 'node:path'
-import { DriveMcWorldFile, LocalMcWorldFile } from '../McWorldFile'
+import { DriveMcWorldFile, LocalMcWorldFile } from '../src/McWorldFile'
 
 // bun run debug/upload-master.ts -i ./data/dummy-archive-file.txt.zip -t proxy
 
