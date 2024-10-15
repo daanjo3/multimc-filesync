@@ -42,12 +42,12 @@ function listSaves(): LocalMcWorldFile[] {
   )
 }
 
-
-function editConfig() {
-  const { instance } = getContext()
-  const cfgPath = `${instance.instPath}/instance.cfg`
-  const cfgFile = fs.readFileSync(cfgPath, { encoding: 'utf-8' })
-  const toMap = () => {
+let cfgMap: Map<string, any> | null = null
+function cfg() {
+  const load = () => {
+    const { instance } = getContext()
+    const cfgPath = `${instance.instPath}/instance.cfg`
+    const cfgFile = fs.readFileSync(cfgPath, { encoding: 'utf-8' })
     const lines = cfgFile.split('\n')
     return lines.reduce<Map<string, any>>((map, line) => {
       const [key, value] = line.split('=')
@@ -55,24 +55,18 @@ function editConfig() {
       return map
     }, new Map())
   }
-  const cfgMap = toMap()
+  if (!cfgMap) {
+    cfgMap = load()
+  }
+  
   return {
-    get: (key: string) => cfgMap.get(key),
-    set: (key: string, newVal: any) => {
-      if (!cfgMap.has(key)) {
-        // TODO not working
-        fs.appendFileSync(cfgPath, `${key}=${newVal}`)
-      } else {
-        const oldVal = cfgMap.get(key)
-        cfgFile.replace(`${key}=${oldVal}`, `${key}=${newVal}`)
-        fs.writeFileSync(cfgPath, cfgFile)
-      }
-    }
+    get: (key: string) => cfgMap!.get(key),
+    refresh: () => { cfgMap = load() }
   }
 }
 
 export default {
   getContext,
   listSaves,
-  cfg: editConfig
+  cfg
 }
