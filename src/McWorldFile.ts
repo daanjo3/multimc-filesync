@@ -8,11 +8,6 @@ import path from 'node:path'
 type SourceType = 'gdrive' | 'local'
 type SourceFile = BunFile | drive_v3.Schema$File
 
-interface SourceData<A = SourceType, B = SourceFile> {
-  type: A
-  filedata: B
-}
-
 interface GDriveAppProperties {
   mcInstance: string
   mcHost: string
