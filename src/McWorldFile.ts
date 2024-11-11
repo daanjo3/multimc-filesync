@@ -4,6 +4,7 @@ import { Readable } from 'node:stream'
 import gdrive, { type CreateProperties } from './gdrive'
 import AdmZip from 'adm-zip'
 import path from 'node:path'
+import logger from './logger'
 
 type SourceType = 'gdrive' | 'local'
 type SourceFile = BunFile | drive_v3.Schema$File
@@ -23,8 +24,9 @@ const hasRequiredFields = {
     !!file.name &&
     !!file.modifiedTime &&
     !!file.appProperties?.mcInstance &&
-    !!file.appProperties?.mcHost &&
-    !!file.appProperties?.mcType,
+    !!file.appProperties?.mcType &&
+    // If not master a host needs to be provided
+    (file.appProperties.mcType == 'master' || !!file.appProperties.mcHost),
   local: (
     file: BunFile,
   ): file is BunFile & { name: string; lastModified: Date } =>
@@ -66,7 +68,7 @@ export abstract class McWorldFile<SF extends SourceFile> {
     const sameName = this.getFileName() == other.getFileName()
     const sameInstance = this.instance == other.instance
     const sameFile = sameName && sameInstance
-    console.debug(
+    logger.debug(
       `File is equal: ${sameFile}`,
       { this: { name: this.getFileName(), instance: this.instance } },
       { other: { name: other.getFileName(), instance: other.instance } },
