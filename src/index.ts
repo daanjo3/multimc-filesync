@@ -5,6 +5,7 @@ import system from './system'
 import process from 'process'
 import { DriveMcWorldFile, type LocalMcWorldFile } from './McWorldFile'
 import { parseArgs } from 'util'
+import logger from './logger'
 
 async function syncUp() {
   // 1. List all local and remote master files
@@ -12,7 +13,7 @@ async function syncUp() {
   const hostname = system.getName()
 
   const localFiles = await multimc.listSaves()
-  console.log(
+  logger.info(
     'Found local instance files:\n' +
       localFiles.map((f) => f.toString()).join('\n'),
   )
@@ -23,7 +24,7 @@ async function syncUp() {
   })
   const remoteMasterFiles = remoteFiles.filter((f) => f.getType() == 'master')
   const remoteProxyFiles = remoteFiles.filter((f) => f.getType() == 'proxy')
-  console.log(
+  logger.info(
     'Found remote instance files:\n' +
       remoteProxyFiles.map((f) => f.toString()),
   )
@@ -45,9 +46,10 @@ async function syncUpFile(
   remoteProxyFile: DriveMcWorldFile | undefined,
   remoteMasterFile: DriveMcWorldFile | undefined,
 ) {
+  // Check whether local file is updated / known by remote
   if (remoteProxyFile && remoteProxyFile.isNewerThan(localFile)) {
-    console.log(
-      `Skipping updating remote (${remoteProxyFile.lastUpdated.toLocaleDateString()}) as it is newer than local (${remoteProxyFile.lastUpdated.toLocaleDateString()})`,
+    logger.info(
+      `Skipping updating ${localFile.getFileName()} as remote (${remoteProxyFile.lastUpdated.toLocaleDateString()}) is newer than local (${remoteProxyFile.lastUpdated.toLocaleDateString()})`,
     )
     return
   }
@@ -55,24 +57,26 @@ async function syncUpFile(
   const { instance } = multimc.getContext()
   const hostname = system.getName()
 
+  // Upsert proxy on remote
   if (remoteProxyFile) {
-    console.log(`Update proxy file: ${localFile.getFileName()}`)
+    logger.info(`Update proxy file: ${localFile.getFileName()}`)
     await remoteProxyFile.update(localFile.zip())
   } else {
-    console.log(`Creating new proxy file: ${localFile.getFileName()}`)
-    DriveMcWorldFile.create(localFile.zip(), localFile.getFileName(), {
+    logger.info(`Creating new proxy file: ${localFile.getFileName()}`)
+    await DriveMcWorldFile.create(localFile.zip(), localFile.getFileName(), {
       mcHost: hostname,
       mcInstance: instance.id,
       mcType: 'proxy',
     })
   }
 
+  // Upsert master on remote
   if (remoteMasterFile) {
-    console.log(`Updating master file: ${localFile.getFileName()}`)
+    logger.info(`Updating master file: ${localFile.getFileName()}`)
     await remoteMasterFile.update(localFile.zip())
   } else {
-    console.log(`Creating new master file: ${localFile.getFileName()}`)
-    DriveMcWorldFile.create(localFile.zip(), localFile.getFileName(), {
+    logger.info(`Creating new master file: ${localFile.getFileName()}`)
+    await DriveMcWorldFile.create(localFile.zip(), localFile.getFileName(), {
       mcInstance: instance.id,
       mcType: 'master',
     })
