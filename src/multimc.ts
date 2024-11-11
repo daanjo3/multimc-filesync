@@ -1,13 +1,16 @@
 import fs from 'node:fs'
 import { LocalMcWorldFile } from './McWorldFile'
 
-interface MultiMcContext {
-  instance: {
-    name: string
-    id: string
-    instPath: string
-    mcPath: string
-  }
+export interface MultiMcContext {
+  instance: MultiMcInstance
+}
+
+export interface MultiMcInstance {
+  name: string
+  id: string
+  instPath: string
+  mcPath: string
+  savesPath: string
 }
 
 function getContext(): MultiMcContext {
@@ -26,16 +29,16 @@ function getContext(): MultiMcContext {
       id: process.env.INST_ID,
       instPath: process.env.INST_DIR,
       mcPath: process.env.INST_MC_DIR,
+      savesPath: `${process.env.INST_MC_DIR}/saves`,
     },
   }
 }
 
 function listSaves(): LocalMcWorldFile[] {
   const { instance } = getContext()
-  const savesPath = `${instance.mcPath}/saves`
-  const saveNames = fs.readdirSync(savesPath)
+  const saveNames = fs.readdirSync(instance.savesPath)
   return saveNames.map((saveName) =>
-    LocalMcWorldFile.fromFile(Bun.file(`${savesPath}/${saveName}`)),
+    LocalMcWorldFile.fromFile(Bun.file(`${instance.savesPath}/${saveName}`)),
   )
 }
 

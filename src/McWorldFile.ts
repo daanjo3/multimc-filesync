@@ -2,9 +2,12 @@ import type { BunFile } from 'bun'
 import type { drive_v3 } from 'googleapis'
 import { Readable } from 'node:stream'
 import gdrive, { type CreateProperties } from './gdrive'
+import multimc from './multimc'
 import AdmZip from 'adm-zip'
 import path from 'node:path'
+import fs from 'node:fs'
 import logger from './logger'
+import config from './config'
 
 type SourceType = 'gdrive' | 'local'
 type SourceFile = BunFile | drive_v3.Schema$File
@@ -121,6 +124,71 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
     )
   }
 
+  static create(saveName: string, lastModified: Date, filebuf: Buffer) {
+    const { instance } = multimc.getContext()
+    const filename = `${instance.savesPath}/${saveName}`
+
+    const archive = new AdmZip(filebuf)
+    archive.extractAllTo(filename)
+    fs.utimesSync(filename, new Date(), lastModified) // set to match remote file's timestamp
+
+    return LocalMcWorldFile.fromFile(Bun.file(filename))
+  }
+
+  update(filebuf: Buffer) {
+    const { instance } = multimc.getContext()
+    const filenameZip = `${instance.savesPath}/${this.getFileName()}.zip`
+    const filenameOld = `${instance.savesPath}/${this.getFileName()}.old.zip`
+    const filenameTmp = `${instance.savesPath}/${this.getFileName()}.tmp.zip`
+
+    // 1. Move existing TestWorld.old.zip to TestWorld.tmp.zip
+    try {
+      if (fs.existsSync(filenameOld)) {
+        fs.renameSync(filenameOld, filenameTmp)
+      }
+    } catch (err) {
+      logger.error(err)
+      throw `Failed to rename ${instance.savesPath}/${this.name}.old.zip to ${instance.savesPath}/${this.name}.tmp.zip`
+    }
+
+    try {
+      // 2. ZIP existing folder and save as TestWorld.old.zip
+      const oldArchive = new AdmZip()
+      oldArchive.addLocalFolder(this.getFilePath())
+      oldArchive.writeZip(filenameOld)
+
+      try {
+        // 3. Save remote buffer to TestWorld.zip
+        const archive = new AdmZip(filebuf)
+        archive.writeZip(filenameZip)
+        // 4. Remove existing folder
+        fs.rmSync(this.getFilePath(), { force: true, recursive: true })
+        // 5. Unzip
+        const unzippingArchive = new AdmZip(filenameZip)
+        unzippingArchive.extractAllTo(this.getFilePath())
+        // 6. Remove TestWorld.zip
+        fs.rmSync(filenameZip)
+        // 7. Remove TestWorld.tmp.zip
+        if (fs.existsSync(filenameTmp)) {
+          fs.rmSync(filenameTmp)
+        }
+      } catch (err) {
+        if (fs.existsSync(this.getFilePath())) {
+          fs.rmSync(this.getFilePath(), { force: true, recursive: true })
+        }
+        const resetOldArchive = new AdmZip(filenameOld)
+        resetOldArchive.extractAllTo(this.getFilePath())
+        throw err
+      }
+    } catch (err) {
+      if (fs.existsSync(filenameTmp)) {
+        fs.renameSync(filenameTmp, filenameOld)
+      }
+      logger.error(err)
+      throw `Failed to upload local file ${this.getFileName()}`
+    }
+  }
+
   getFileName() {
     return path.basename(this.name)
   }
@@ -132,7 +200,7 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
     return this.name
   }
 
-  // Also include JourneyMap data in main instance folder if present
+  // TODO Also include JourneyMap data in main instance folder if present
   zip(): Readable {
     const archive = new AdmZip()
     archive.addLocalFolder(this.getFilePath())
