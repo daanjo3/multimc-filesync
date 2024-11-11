@@ -3,7 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "format": "prettier . --write"
+    "format": "prettier . --write",
+    "build": "bun run build:linux",
+    "build:linux": "bun build --compile --target=bun-linux-x64 ./src/index.ts --outfile out/filesync",
+    "build:windows": "bun build --compile --target=bun-windows-x64 ./src/index.ts --outfile out/filesync"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
@@ -17,7 +20,7 @@
     "@google-cloud/local-auth": "^3.0.1",
     "adm-zip": "^0.5.16",
     "google-auth-library": "^9.14.0",
-    "googleapis": "^142.0.0",
+    "googleapis": "144.0.0",
     "winston": "^3.15.0"
   }
 }
