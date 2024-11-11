@@ -1,3 +1,5 @@
+import appCredentials from '../credentials.json'
+
 export default {
   baseDir: process.env.MMC_SYNC_DIR,
   logFilePath: `${process.env.MMC_SYNC_DIR}/mmc_filesync.log`,
@@ -5,5 +7,6 @@ export default {
 
   drive: {
     baseDirName: process.env.MMC_SYNC_DRIVE_DIR ?? 'MinecraftSync',
+    appCredentials,
   },
 }
