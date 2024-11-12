@@ -40,40 +40,39 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
     )
   }
 
-  static async create(saveName: string, downloadStream: Readable, lastModified: Date) {
+  static async create(
+    saveName: string,
+    downloadStream: Readable,
+    lastModified: Date,
+  ) {
     logger.info(`Creating new file ${saveName} locally`)
-    
+
     const { instance } = multimc.getContext()
     const fp = `${instance.savesPath}/${saveName}`
     const fpZip = `${instance.savesPath}/${saveName}.zip`
-    
+
     // Download procedure
     try {
       // Store downloaded archive as TestWorld.zip
       const writeStream = fs.createWriteStream(fpZip)
       await pipeline(downloadStream, writeStream)
-  
+
       // Unpack TestWorld.zip to TestWorld
       const archive = new AdmZip(fpZip)
       archive.extractAllTo(fp)
-      
+
       // set to match remote file's timestamp
-      fs.utimesSync(fp, new Date(), lastModified) 
+      fs.utimesSync(fp, new Date(), lastModified)
 
-    return LocalMcWorldFile.fromFile(Bun.file(fp))
+      return LocalMcWorldFile.fromFile(Bun.file(fp))
     } catch (err) {
-
       logger.error(err)
       throw `Failed to download and unpack file ${saveName}`
-
     } finally {
-
       if (fs.existsSync(fpZip)) {
         fs.rmSync(fpZip)
       }
-
     }
-    
   }
 
   async update(downloadStream: Readable, lastModified: Date) {
@@ -110,7 +109,7 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
         fs.rmSync(fpNew, { force: true, recursive: true })
         logger.info('Removed newly downloaded file')
       }
-      
+
       // Reset the main file, assuming it has been altered
       if (resetMain) {
         if (!fs.existsSync(fpZipOld)) {
@@ -126,7 +125,7 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
         const archive = new AdmZip(fpZipOld)
         archive.extractAllTo(fp)
       }
-      
+
       // Remove the previous TestWorld.old.zip
       logger.info(`Removing previous ${fpZipOld}`)
       fs.rmSync(fpZipOld)
@@ -138,14 +137,14 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
         fs.renameSync(fpZipTmp, fpZipOld)
       }
     }
-    
+
     // Download procedure
     // 1. Store downloaded archive as TestWorld.new.zip
     try {
       logger.debug(`Writing download stream to ${fpZipNew}`)
       const writeStream = fs.createWriteStream(fpZipNew)
       await pipeline(downloadStream, writeStream)
-  
+
       // 2. Unpack TestWorld.new.zip to TestWorld-new
       logger.debug(`Unpacking ${fpZipNew} into ~${fpNew}`)
       const archive = new AdmZip(fpZipNew)
@@ -175,7 +174,7 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
 
       // 6. set to match remote file's timestamp
       logger.debug(`Updating lastModified to match remote's: ${lastModified}`)
-      fs.utimesSync(fp, lastModified, lastModified) 
+      fs.utimesSync(fp, lastModified, lastModified)
     } catch (err) {
       logger.error(err)
       restore(true)
@@ -183,7 +182,6 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
     }
 
     logger.info(`Updating file ${this.getFileName()} done.`)
-
   }
 
   getFileName() {
@@ -197,6 +195,10 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
     return this.name
   }
 
+  setLastModified(lastModified: Date) {
+    fs.utimesSync(this.getFilePath(), lastModified, lastModified)
+  }
+
   // TODO Also include JourneyMap data in main instance folder if present
   zip(): Readable {
     const archive = new AdmZip()
@@ -204,4 +206,3 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
     return Readable.from(archive.toBuffer())
   }
 }
-

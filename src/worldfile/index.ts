@@ -1,9 +1,5 @@
-import { DriveMcWorldFile } from "./DriveMcWorldFile";
-import { LocalMcWorldFile } from "./LocalMcWorldFile";
-import { McWorldFile } from "./McWorldFile";
+import { DriveMcWorldFile } from './DriveMcWorldFile'
+import { LocalMcWorldFile } from './LocalMcWorldFile'
+import { McWorldFile } from './McWorldFile'
 
-export {
-  McWorldFile,
-  DriveMcWorldFile,
-  LocalMcWorldFile
-}
+export { McWorldFile, DriveMcWorldFile, LocalMcWorldFile }

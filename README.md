@@ -19,6 +19,7 @@ Get a credentials.json file for the correct app from the [Google cloud credentia
 Bun can be used to build the binaries. See package.json for the commands.
 
 ## ToDo's
+
 - Build pipeline which builds a binary along with the Google OAuth credentials
 - Use app-properties for registering the save-name instead of using the filename to make it safer.
 - Update method for identifying instances (maybe user-controlled?)

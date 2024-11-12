@@ -39,9 +39,8 @@ function listSaves(): LocalMcWorldFile[] {
   const saveNames = fs.readdirSync(instance.savesPath)
   return saveNames
     .map((saveName) => `${instance.savesPath}/${saveName}`)
-    .filter((fp) => fs.lstatSync(fp).isDirectory() )
-    .map((fp) => LocalMcWorldFile.fromFile(Bun.file(fp)),
-  )
+    .filter((fp) => fs.lstatSync(fp).isDirectory())
+    .map((fp) => LocalMcWorldFile.fromFile(Bun.file(fp)))
 }
 
 let cfgMap: Map<string, any> | null = null

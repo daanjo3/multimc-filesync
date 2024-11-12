@@ -10,12 +10,12 @@ async function loadFileIndex(instanceId: string, host: string) {
     gdrive.searchFiles({
       instance: instanceId,
       host,
-      type: 'proxy'
+      type: 'proxy',
     }),
     gdrive.searchFiles({
       instance: instanceId,
-      type: 'master'
-    })
+      type: 'master',
+    }),
   ])
   logger.debug(
     'Found local instance files:\n' +
@@ -91,34 +91,49 @@ async function updateRemoteFile(
   }
 
   // Upsert master on remote
-  if (remoteMasterFile && localFile.isNewerThan(remoteMasterFile)) {
+  if (!remoteMasterFile) {
+    logger.info(`Creating new master file: ${localFile.getFileName()}`)
+    remoteMasterFile = await DriveMcWorldFile.create(
+      localFile.zip(),
+      localFile.getFileName(),
+      {
+        mcInstance: instance.id,
+        mcType: 'master',
+      },
+    )
+  } else if (localFile.isNewerThan(remoteMasterFile)) {
     logger.info(`Updating master file: ${localFile.getFileName()}`)
     await remoteMasterFile.update(localFile.zip())
-  } else {
-    logger.info(`Creating new master file: ${localFile.getFileName()}`)
-    await DriveMcWorldFile.create(localFile.zip(), localFile.getFileName(), {
-      mcInstance: instance.id,
-      mcType: 'master',
-    })
   }
+  // Update local file's lastUpdate to prevent update looping
+  localFile.setLastModified(remoteMasterFile.lastUpdated)
 }
 
 export async function updateLocal() {
   // 1. List all local and remote master files
   const { instance } = multimc.getContext()
   const hostname = system.getName()
-  const { localFiles, remoteMasterFiles } = await loadFileIndex(instance.id, hostname)
+  const { localFiles, remoteMasterFiles } = await loadFileIndex(
+    instance.id,
+    hostname,
+  )
 
   // 2. Update local files where remote master exists and is newer
   for (const remoteMasterFile of remoteMasterFiles) {
-    const localFile: LocalMcWorldFile | undefined = localFiles.find((lf) => lf.isSameSave(remoteMasterFile))
-    if (localFile && localFile.isNewerOrEqualThan(remoteMasterFile)) {
+    const localFile: LocalMcWorldFile | undefined = localFiles.find((lf) =>
+      lf.isSameSave(remoteMasterFile),
+    )
+    // Can't reverse the time comparison as the 1 second leeway will cause this to always fail
+    if (localFile && !remoteMasterFile.isNewerThan(localFile)) {
       logger.info(
         `Skipping updating ${localFile.getFileName()} as local (${localFile.lastUpdated.toISOString()}) is newer than remote master (${remoteMasterFile?.lastUpdated.toISOString()})`,
       )
       continue
     }
 
+    logger.info(
+      `Downloading new or updated save ${remoteMasterFile.getFileName()}`,
+    )
     const filestream = await remoteMasterFile.downloadReadable()
     if (localFile) {
       await localFile.update(filestream, remoteMasterFile.lastUpdated)

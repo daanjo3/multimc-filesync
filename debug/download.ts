@@ -16,7 +16,7 @@ const { values } = parseArgs({
     out: {
       short: 'o',
       type: 'string',
-    }
+    },
   },
   strict: true,
   allowPositionals: true,
@@ -35,7 +35,7 @@ const instanceId = values.instance
 
 const masterFiles = await gdrive.searchFiles({
   instance: instanceId,
-  type: 'master'
+  type: 'master',
 })
 
 if (masterFiles.length == 0) {
@@ -54,9 +54,7 @@ const writeStream = fs.createWriteStream(filenameZipped)
 downloadStream.pipe(writeStream)
 
 downloadStream.on('end', () => {
-
   logger.info(`Opening archive and extracting it to file '${filename}'`)
   const archive = new AdmZip(filenameZipped)
   archive.extractAllTo(filename)
-
 })

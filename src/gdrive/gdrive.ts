@@ -99,7 +99,7 @@ async function executeSearchFiles(q: string): Promise<drive_v3.Schema$File[]> {
     files.push(...data.files)
   }
   while (data?.nextPageToken) {
-    logger.debug('Resolving more pages')
+    logger.silly('Resolving more pages')
     const res: GaxiosResponse<drive_v3.Schema$FileList> =
       await service.files.list({ pageToken: data.nextPageToken })
     data = res.data
@@ -107,7 +107,7 @@ async function executeSearchFiles(q: string): Promise<drive_v3.Schema$File[]> {
       files.push(...data.files)
     }
   }
-  logger.debug(
+  logger.silly(
     'Found files:\n' + files.map((f) => JSON.stringify(f, null, 2)).join('\n'),
   )
   return files
@@ -120,11 +120,12 @@ async function getOrCreateMinecraftSyncDir(): Promise<string> {
   logger.debug(`Fetching or creating dir ${config.drive.baseDirName}`)
   let dirId = await getExistingDir(config.drive.baseDirName)
   if (dirId != null) {
-    logger.debug(`Found pre-existing directory with id: ${dirId}`)
-    return dirId
+    MC_DIR_ID = dirId
+    logger.debug(`Found pre-existing directory with id: ${MC_DIR_ID}`)
+    return MC_DIR_ID
   }
   MC_DIR_ID = await createDir(config.drive.baseDirName)
-  logger.debug(`Created new directory with id: ${dirId}`)
+  logger.debug(`Created new directory with id: ${MC_DIR_ID}`)
   return MC_DIR_ID
 }
 
@@ -194,8 +195,7 @@ export async function downloadFile(fileId: string) {
   const file = await service.files.get(
     { fileId, alt: 'media' },
     { responseType: 'stream' },
-  ) // Parse stream to file
-  logger.debug('Finished downloaded file', { status: file.status })
+  )
   return file.data
 }
 

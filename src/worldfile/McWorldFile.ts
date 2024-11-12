@@ -44,11 +44,8 @@ export abstract class McWorldFile<SF extends wf.SourceFile> {
   }
 
   isNewerThan(other: McWorldFile<wf.SourceFile>) {
-    return this.lastUpdated > other.lastUpdated
-  }
-
-  isNewerOrEqualThan(other: McWorldFile<wf.SourceFile>) {
-    return this.lastUpdated >= other.lastUpdated
+    // TODO allow for a time difference of 1 second
+    return this.lastUpdated.getTime() - other.lastUpdated.getTime() > 1000
   }
 
   toString() {

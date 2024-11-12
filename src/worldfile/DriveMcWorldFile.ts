@@ -5,7 +5,9 @@ import { McWorldFile } from './McWorldFile'
 import type { worldfile as wf } from './types'
 import logger from '../logger'
 
-const hasRequiredFields = (file: drive_v3.Schema$File): file is wf.DriveMcFile =>
+const hasRequiredFields = (
+  file: drive_v3.Schema$File,
+): file is wf.DriveMcFile =>
   !!file.name &&
   !!file.modifiedTime &&
   !!file.appProperties?.mcInstance &&
@@ -63,7 +65,7 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
     for await (const chunk of stream) {
       _buff.push(chunk)
     }
-    logger.info(`Downloaded file ${this.getFileName()}`, {
+    logger.debug(`Downloaded file ${this.getFileName()}`, {
       meta: this.getMeta(),
     })
     return Buffer.from(_buff)
@@ -73,7 +75,8 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
     try {
       const updatedFile = await gdrive.updateFile(stream, this.data.id!)
       this.data = updatedFile
-      logger.info(`Updated remote file ${this.getFileName()}`, {
+      this.lastUpdated = new Date(this.data.modifiedTime!)
+      logger.debug(`Updated remote file ${this.getFileName()}`, {
         meta: this.getMeta(),
       })
       return this
@@ -100,7 +103,7 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
     return this.name
   }
 
-  getMeta(): Record<string, any> {
+  getMeta() {
     return {
       name: this.getFileName(),
       id: this.data.id!,
