@@ -1,7 +1,8 @@
 import appCredentials from '../credentials.json'
+import path from 'node:path'
 
 export default {
-  baseDir: process.env.MMC_SYNC_DIR,
+  baseDir: path.resolve(process.env.INST_DIR!, '..', '..', 'filesync'),
   clearLogOnStart: process.env.MMC_SYNC_CLEAR_LOG == 'true',
   logging: {
     filepath: `${process.env.MMC_SYNC_DIR}/mmc_filesync.log`,

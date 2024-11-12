@@ -106,6 +106,7 @@ async function updateRemoteFile(
     await remoteMasterFile.update(localFile.zip())
   }
   // Update local file's lastUpdate to prevent update looping
+  // TODO proxy file update is always firing because it updates much earlier than master
   localFile.setLastModified(remoteMasterFile.lastUpdated)
 }
 
