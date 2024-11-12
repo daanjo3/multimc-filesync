@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { LocalMcWorldFile } from './McWorldFile'
+import { LocalMcWorldFile } from './worldfile'
 
 export interface MultiMcContext {
   instance: MultiMcInstance
@@ -37,8 +37,10 @@ function getContext(): MultiMcContext {
 function listSaves(): LocalMcWorldFile[] {
   const { instance } = getContext()
   const saveNames = fs.readdirSync(instance.savesPath)
-  return saveNames.map((saveName) =>
-    LocalMcWorldFile.fromFile(Bun.file(`${instance.savesPath}/${saveName}`)),
+  return saveNames
+    .map((saveName) => `${instance.savesPath}/${saveName}`)
+    .filter((fp) => fs.lstatSync(fp).isDirectory() )
+    .map((fp) => LocalMcWorldFile.fromFile(Bun.file(fp)),
   )
 }
 

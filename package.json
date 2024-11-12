@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
+    "@types/node": "20",
     "adm-zip": "^0.5.16",
     "google-auth-library": "^9.14.0",
     "googleapis": "144.0.0",

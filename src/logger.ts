@@ -3,9 +3,9 @@ import config from './config'
 const { combine, timestamp, prettyPrint } = format
 
 const logger = createLogger({
-  level: 'info',
+  level: config.logging.level,
   format: combine(timestamp(), prettyPrint()),
-  transports: [new transports.File({ filename: config.logFilePath })],
+  transports: [new transports.File({ filename: config.logging.filepath })],
 })
 
 if (process.env.NODE_ENV !== 'production') {

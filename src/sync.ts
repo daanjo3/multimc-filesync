@@ -1,30 +1,36 @@
 import multimc, { type MultiMcInstance } from './multimc'
 import gdrive from './gdrive/gdrive'
 import system from './system'
-import { DriveMcWorldFile, LocalMcWorldFile, McWorldFile } from './McWorldFile'
+import { DriveMcWorldFile, LocalMcWorldFile } from './worldfile'
 import logger from './logger'
 
-async function loadFileIndex(instance: MultiMcInstance, hostname: string) {
-  const [localFiles, remoteFiles] = await Promise.all([
+async function loadFileIndex(instanceId: string, host: string) {
+  const [localFiles, remoteProxyFiles, remoteMasterFiles] = await Promise.all([
     multimc.listSaves(),
     gdrive.searchFiles({
-      instance: instance.id,
-      host: hostname,
+      instance: instanceId,
+      host,
+      type: 'proxy'
     }),
+    gdrive.searchFiles({
+      instance: instanceId,
+      type: 'master'
+    })
   ])
-  logger.info(
+  logger.debug(
     'Found local instance files:\n' +
       localFiles.map((f) => f.toString()).join('\n'),
   )
-  const remoteMasterFiles = remoteFiles.filter((f) => f.getType() == 'master')
-  const remoteProxyFiles = remoteFiles.filter((f) => f.getType() == 'proxy')
-  logger.info(
-    'Found remote instance files:\n' +
-      remoteProxyFiles.map((f) => f.toString()),
+  logger.debug(
+    'Found remote proxy files:\n' +
+      remoteProxyFiles.map((f) => f.toString()).join('\n'),
+  )
+  logger.debug(
+    'Found remote master files:\n' +
+      remoteMasterFiles.map((f) => f.toString()).join('\n'),
   )
   return {
     localFiles,
-    remoteFiles,
     remoteMasterFiles,
     remoteProxyFiles,
   }
@@ -36,7 +42,7 @@ export async function updateRemote() {
   const hostname = system.getName()
 
   const { localFiles, remoteMasterFiles, remoteProxyFiles } =
-    await loadFileIndex(instance, hostname)
+    await loadFileIndex(instance.id, hostname)
 
   // Update proxies on remote
   // TODO wrap in Promise.all(Settled)
@@ -50,9 +56,9 @@ export async function updateRemote() {
     // Check whether local file is updated / known by remote
     if (remoteProxyFile && remoteProxyFile.isNewerThan(localFile)) {
       logger.info(
-        `Skipping updating ${localFile.getFileName()} as remote (${remoteProxyFile.lastUpdated.toLocaleDateString()}) is newer than local (${localFile.lastUpdated.toLocaleDateString()})`,
+        `Skipping updating ${localFile.getFileName()} as remote (${remoteProxyFile.lastUpdated.toISOString()}) is newer than local (${localFile.lastUpdated.toISOString()})`,
       )
-      return
+      continue
     }
     await updateRemoteFile(
       localFile,
@@ -85,7 +91,7 @@ async function updateRemoteFile(
   }
 
   // Upsert master on remote
-  if (remoteMasterFile) {
+  if (remoteMasterFile && localFile.isNewerThan(remoteMasterFile)) {
     logger.info(`Updating master file: ${localFile.getFileName()}`)
     await remoteMasterFile.update(localFile.zip())
   } else {
@@ -101,30 +107,26 @@ export async function updateLocal() {
   // 1. List all local and remote master files
   const { instance } = multimc.getContext()
   const hostname = system.getName()
-
-  const { localFiles, remoteMasterFiles } = await loadFileIndex(
-    instance,
-    hostname,
-  )
+  const { localFiles, remoteMasterFiles } = await loadFileIndex(instance.id, hostname)
 
   // 2. Update local files where remote master exists and is newer
   for (const remoteMasterFile of remoteMasterFiles) {
-    const localFile = localFiles.find((lf) => lf.isSameSave(remoteMasterFile))
-    if (localFile && localFile.isNewerThan(remoteMasterFile)) {
+    const localFile: LocalMcWorldFile | undefined = localFiles.find((lf) => lf.isSameSave(remoteMasterFile))
+    if (localFile && localFile.isNewerOrEqualThan(remoteMasterFile)) {
       logger.info(
-        `Skipping updating ${localFile.getFileName()} as local (${localFile.lastUpdated.toLocaleDateString()}) is newer than remote master (${remoteMasterFile?.lastUpdated.toLocaleDateString()})`,
+        `Skipping updating ${localFile.getFileName()} as local (${localFile.lastUpdated.toISOString()}) is newer than remote master (${remoteMasterFile?.lastUpdated.toISOString()})`,
       )
-      return
+      continue
     }
 
-    const filebuf = await remoteMasterFile.download()
+    const filestream = await remoteMasterFile.downloadReadable()
     if (localFile) {
-      await localFile.update(filebuf)
+      await localFile.update(filestream, remoteMasterFile.lastUpdated)
     } else {
       LocalMcWorldFile.create(
         remoteMasterFile.getFileName(),
+        filestream,
         remoteMasterFile.lastUpdated,
-        filebuf,
       )
     }
   }

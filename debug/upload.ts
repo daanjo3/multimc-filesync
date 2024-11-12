@@ -2,7 +2,8 @@ import { parseArgs } from 'util'
 import gdrive from '../src/gdrive/gdrive'
 import fs from 'node:fs'
 import path from 'node:path'
-import { DriveMcWorldFile, LocalMcWorldFile } from '../src/McWorldFile'
+import { DriveMcWorldFile, LocalMcWorldFile } from '../src/worldfile'
+import logger from '../src/logger'
 
 // bun run debug/upload-master.ts -i ./data/dummy-archive-file.txt.zip -t proxy
 
@@ -23,7 +24,7 @@ const { values } = parseArgs({
 })
 
 if (!values.input) {
-  console.log('Missing input')
+  logger.error('Missing input')
   process.exit(1)
 }
 const fp = values.input
@@ -33,7 +34,7 @@ if (values.type != 'master' && values.type != 'proxy') {
 const type: 'master' | 'proxy' = values.type ?? 'master'
 
 if (!fs.existsSync(fp)) {
-  console.log(`File ${fp} does not exist`)
+  logger.error(`File ${fp} does not exist`)
   process.exit(1)
 }
 

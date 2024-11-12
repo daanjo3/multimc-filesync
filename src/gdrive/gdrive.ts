@@ -4,7 +4,8 @@ import { Readable } from 'node:stream'
 
 import authorize from './auth'
 import config from '../config'
-import { DriveMcWorldFile } from '../McWorldFile'
+import { DriveMcWorldFile } from '../worldfile'
+import logger from '../logger'
 
 let MC_DIR_ID = ''
 
@@ -87,7 +88,7 @@ async function executeSearchFiles(q: string): Promise<drive_v3.Schema$File[]> {
   const service = await getGDriveService()
   const files = []
 
-  console.log(`Looking for files with query: ${q}`)
+  logger.debug(`Looking for files with query: ${q}`)
   const res = await service.files.list({
     pageSize: 100,
     q,
@@ -98,7 +99,7 @@ async function executeSearchFiles(q: string): Promise<drive_v3.Schema$File[]> {
     files.push(...data.files)
   }
   while (data?.nextPageToken) {
-    console.log('Resolving more pages')
+    logger.debug('Resolving more pages')
     const res: GaxiosResponse<drive_v3.Schema$FileList> =
       await service.files.list({ pageToken: data.nextPageToken })
     data = res.data
@@ -106,7 +107,7 @@ async function executeSearchFiles(q: string): Promise<drive_v3.Schema$File[]> {
       files.push(...data.files)
     }
   }
-  console.debug(
+  logger.debug(
     'Found files:\n' + files.map((f) => JSON.stringify(f, null, 2)).join('\n'),
   )
   return files
@@ -116,14 +117,14 @@ async function getOrCreateMinecraftSyncDir(): Promise<string> {
   if (MC_DIR_ID) {
     return MC_DIR_ID
   }
-  console.log(`Fetching or creating dir ${config.drive.baseDirName}`)
+  logger.debug(`Fetching or creating dir ${config.drive.baseDirName}`)
   let dirId = await getExistingDir(config.drive.baseDirName)
   if (dirId != null) {
-    console.log(`Found pre-existing directory with id: ${dirId}`)
+    logger.debug(`Found pre-existing directory with id: ${dirId}`)
     return dirId
   }
   MC_DIR_ID = await createDir(config.drive.baseDirName)
-  console.log(`Created new directory with id: ${dirId}`)
+  logger.debug(`Created new directory with id: ${dirId}`)
   return MC_DIR_ID
 }
 
@@ -194,6 +195,7 @@ export async function downloadFile(fileId: string) {
     { fileId, alt: 'media' },
     { responseType: 'stream' },
   ) // Parse stream to file
+  logger.debug('Finished downloaded file', { status: file.status })
   return file.data
 }
 
