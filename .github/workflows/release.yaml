@@ -1,0 +1,51 @@
+name: Publish binaries along with release
+run-name: ${{ github.actor }} is building the latest binaries.
+on:
+  release:
+    types: [created]
+jobs:
+  Build-Binaries:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup bun environment
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.0.11
+
+      - name: Install project bun dependencies
+        run: bun install
+      
+      - name: Building linux binary
+        run: bun run build:linux
+      
+      - name: Building windows binary
+        run: bun run build:linux
+      
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.3.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      
+      - name: Upload linux binary
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ./out/filesync-linux-x64
+          asset_name: filesync-linux-x64-${{ steps.get_release.outputs.tag_name }}
+          asset_content_type: application/octet-stream
+      
+      - name: Upload windows binary
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ./out/filesync-windows-x64
+          asset_name: filesync-windows-x64-${{ steps.get_release.outputs.tag_name }}
+          asset_content_type: application/octet-stream
