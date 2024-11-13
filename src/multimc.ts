@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import { LocalMcWorldFile } from './worldfile'
+import path from 'node:path'
 
 export interface MultiMcContext {
   instance: MultiMcInstance
@@ -29,7 +30,7 @@ function getContext(): MultiMcContext {
       id: process.env.INST_ID,
       instPath: process.env.INST_DIR,
       mcPath: process.env.INST_MC_DIR,
-      savesPath: `${process.env.INST_MC_DIR}/saves`,
+      savesPath: path.join(process.env.INST_MC_DIR!, 'saves'),
     },
   }
 }
@@ -38,7 +39,7 @@ function listSaves(): LocalMcWorldFile[] {
   const { instance } = getContext()
   const saveNames = fs.readdirSync(instance.savesPath)
   return saveNames
-    .map((saveName) => `${instance.savesPath}/${saveName}`)
+    .map((saveName) => path.join(instance.savesPath, saveName))
     .filter((fp) => fs.lstatSync(fp).isDirectory())
     .map((fp) => LocalMcWorldFile.fromFile(Bun.file(fp)))
 }
@@ -47,7 +48,7 @@ let cfgMap: Map<string, any> | null = null
 function cfg() {
   const load = () => {
     const { instance } = getContext()
-    const cfgPath = `${instance.instPath}/instance.cfg`
+    const cfgPath = path.join(instance.instPath, 'instance.cfg')
     const cfgFile = fs.readFileSync(cfgPath, { encoding: 'utf-8' })
     const lines = cfgFile.split('\n')
     return lines.reduce<Map<string, any>>((map, line) => {

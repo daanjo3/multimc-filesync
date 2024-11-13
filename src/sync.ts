@@ -4,6 +4,7 @@ import system from './system'
 import { DriveMcWorldFile, LocalMcWorldFile } from './worldfile'
 import logger from './logger'
 
+// TODO split so while uploading skip remote index if there are no local files
 async function loadFileIndex(instanceId: string, host: string) {
   const [localFiles, remoteProxyFiles, remoteMasterFiles] = await Promise.all([
     multimc.listSaves(),
@@ -139,7 +140,7 @@ export async function updateLocal() {
     if (localFile) {
       await localFile.update(filestream, remoteMasterFile.lastUpdated)
     } else {
-      LocalMcWorldFile.create(
+      await LocalMcWorldFile.create(
         remoteMasterFile.getFileName(),
         filestream,
         remoteMasterFile.lastUpdated,

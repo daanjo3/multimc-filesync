@@ -48,20 +48,23 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
     logger.info(`Creating new file ${saveName} locally`)
 
     const { instance } = multimc.getContext()
-    const fp = `${instance.savesPath}/${saveName}`
-    const fpZip = `${instance.savesPath}/${saveName}.zip`
+    const fp = path.join(instance.savesPath, saveName)
+    const fpZip = path.join(instance.savesPath, `${saveName}.zip`)
 
     // Download procedure
     try {
       // Store downloaded archive as TestWorld.zip
+      logger.debug(`Writing streaming downloaded file to ${fpZip}`)
       const writeStream = fs.createWriteStream(fpZip)
       await pipeline(downloadStream, writeStream)
 
       // Unpack TestWorld.zip to TestWorld
+      logger.debug(`Unpacking archive ${fpZip} into ${fp}`)
       const archive = new AdmZip(fpZip)
       archive.extractAllTo(fp)
 
       // set to match remote file's timestamp
+      logger.debug(`Updating lastModified to match remote's: ${lastModified}`)
       fs.utimesSync(fp, new Date(), lastModified)
 
       return LocalMcWorldFile.fromFile(Bun.file(fp))
@@ -69,20 +72,31 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
       logger.error(err)
       throw `Failed to download and unpack file ${saveName}`
     } finally {
+      logger.debug(`Removing downloaded archive ${fpZip}`)
       if (fs.existsSync(fpZip)) {
         fs.rmSync(fpZip)
       }
     }
+    logger.debug('Finished new file creation')
   }
 
   async update(downloadStream: Readable, lastModified: Date) {
     const { instance } = multimc.getContext()
 
     const fp = this.getFilePath()
-    const fpNew = `${instance.savesPath}/${this.getFileName()}-new`
-    const fpZipOld = `${instance.savesPath}/${this.getFileName()}.old.zip`
-    const fpZipNew = `${instance.savesPath}/${this.getFileName()}.new.zip`
-    const fpZipTmp = `${instance.savesPath}/${this.getFileName()}.tmp.zip`
+    const fpNew = path.join(instance.savesPath, `${this.getFileName()}-new`)
+    const fpZipOld = path.join(
+      instance.savesPath,
+      `${this.getFileName()}.old.zip`,
+    )
+    const fpZipNew = path.join(
+      instance.savesPath,
+      `${this.getFileName()}.new.zip`,
+    )
+    const fpZipTmp = path.join(
+      instance.savesPath,
+      `${this.getFileName()}.tmp.zip`,
+    )
 
     // Backup preparation procedure
     // 1. Rename TestWorld.old.zip to TestWorld.tmp.zip
@@ -189,7 +203,7 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
   }
 
   getFilePath() {
-    if (!this.name.startsWith('/')) {
+    if (!path.isAbsolute(this.name)) {
       throw 'Filename is not absolute path!'
     }
     return this.name

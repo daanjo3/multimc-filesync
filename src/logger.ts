@@ -8,12 +8,10 @@ const logger = createLogger({
   transports: [new transports.File({ filename: config.logging.filepath })],
 })
 
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(
-    new transports.Console({
-      format: format.simple(),
-    }),
-  )
-}
+logger.add(
+  new transports.Console({
+    format: format.simple(),
+  }),
+)
 
 export default logger
