@@ -3,6 +3,8 @@ run-name: Attaching binaries to release
 on:
   release:
     types: [created]
+permissions:
+  contents: write
 jobs:
   build-and-attach:
     runs-on: ubuntu-latest
