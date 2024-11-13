@@ -4,7 +4,6 @@ data/
 out/
 
 # Secret stuff
-credentials.json
 token.json
 
 # Local variables

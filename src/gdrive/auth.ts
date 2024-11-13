@@ -4,7 +4,6 @@ import { google } from 'googleapis'
 import type { OAuth2Client } from 'google-auth-library'
 import config from '../config'
 import fs from 'node:fs'
-import credentials from '../../credentials.json'
 
 // TODO use a more restrictive scope
 const SCOPES = [
@@ -20,7 +19,7 @@ const TOKEN_PATH = path.join(config.baseDir!, 'token.json')
 const CREDENTIALS_PATH = path.join(config.baseDir!, 'credentials.json')
 
 if (!fs.existsSync(CREDENTIALS_PATH)) {
-  fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(credentials, null, 2))
+  fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(config.drive.appCredentials, null, 2))
 }
 
 /**
