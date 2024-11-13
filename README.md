@@ -1,22 +1,28 @@
 # Minecraft Syncer
 
-Tool that can be used to sync Minecraft save games using Google Drive.
-The goal is that this project will result in a script with two commands that can be called by the
-pre and post phases of MultiMC's launching
+Tool that can be used to sync Minecraft save games using Google Drive and MultiMC. This project offers a pre-launch command and a post-exit command that will download or upload savegames to **your own** Google Drive.
 
-## Getting started on development
+## Disclaimer
 
-Install dependencies
+This tool will move around your save-files and has not been tested extensively on all Minecraft/MultiMC versions. Use it at your own risk.
 
-```sh
-bun install
-```
+## Installation
 
-Get a credentials.json file for the correct app from the [Google cloud credentials](https://console.cloud.google.com/apis/credentials) page. Make sure to put this file in the root of the project directory.
+1. Download the binary for your platform from the release page.
+2. Copy the binary to your MultiMC home folder (or any other place on your filesystem)
+3. In MultiMC, goto Settings -> Custom Commands and add the following commands:
+   - Pre-launch command (linux): `/path/to/filesync/binary/folder/filesync-linux-x64-<version> down`
+   - Post-exit command (linux): `/path/to/filesync/binary/folder/filesync-linux-x64-<version> up`
+   - Pre-launch command (linux): `C:\\path\to\filesync\binary\folder\filesync-windows-x64-<version> down`
+   - Post-exit command (linux): `C:\\path\to\filesync\binary\folder\filesync-windows-x64-<version> up`
+4. The first time you will launch a Minecraft instance a Google page will open in your browser asking for permission, provide this.
+5. Your Minecraft startup might hang now, kill the process and restart. It should work now.
+
+To de-install simply remove the custom commands, delete the binary and the created filesync folder in your MultiMC directory.
 
 ## Building binaries
 
-Bun can be used to build the binaries. You can use the following commands:
+You can also simply build the binaries yourself, or run it from source. To build the binaries you can use Bun by calling the following commands:
 
 ```sh
 # Linux build
@@ -28,22 +34,3 @@ bun run build:windows
 # Default build (linux)
 bun run build
 ```
-
-## Using the tool
-
-In its current state the tool can be used to synchronize files between Linux machines. In order to do this, follow the following steps:
-
-1. Get a credentials file and put it in the root of the project directory
-2. Build the binary using the commands above.
-3. In MultiMC open the instance settings and navigate to `Custom Commands`.
-4. Add the follow pre-launch command: `/path/to/filesync/binary down`
-5. Add the follow post-exit command: `/path/to/filesync/binary up`
-6. Launch! The first run and periodically afterwards Google Auth will ask for permission. You need to grant this to use the tool.
-
-## ToDo's
-
-- Make the script Windows friendly
-- Build pipeline which builds a binary along with the Google OAuth credentials
-- Use app-properties for registering the save-name and modified time instead of using the filename and GDrive modified time to make it more reliable.
-- Update method for identifying instances (maybe user-controlled?)
-- Update GDrive rights, they are a bit excessive now.
