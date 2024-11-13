@@ -6,7 +6,7 @@
     "format": "prettier . --write",
     "build": "bun run build:linux",
     "build:linux": "bun build --compile --target=bun-linux-x64 ./src/index.ts --outfile out/filesync-linux-x64",
-    "build:windows": "bun build --compile --target=bun-windows-x64 ./src/index.ts --outfile out/filesync-windows-x64"
+    "build:windows": "bun build --compile --target=bun-windows-x64 ./src/index.ts --outfile out/filesync-windows-x64.exe"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
