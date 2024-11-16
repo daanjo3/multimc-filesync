@@ -1,8 +1,9 @@
 import multimc, { type MultiMcInstance } from './multimc'
-import gdrive, { type CreateProperties } from './gdrive/gdrive'
+import gdrive, { type AppProperties } from './gdrive/gdrive'
 import system from './system'
 import { DriveMcWorldFile, LocalMcWorldFile } from './worldfile'
 import logger from './logger'
+import config from './config'
 
 // TODO split so while uploading skip remote index if there are no local files
 async function loadFileIndex(instanceId: string, host: string) {
@@ -83,39 +84,40 @@ async function updateRemoteFile(
     logger.info(`Update proxy file: ${remoteProxyFile.getDriveName()}`)
     await remoteProxyFile.update(localFile.zip())
   } else {
-    const createProperties: CreateProperties = {
+    const appProperties: AppProperties = {
       mcInstance: instance.id,
       mcSaveName: localFile.getFileName(),
       mcType: 'proxy',
       mcHost: hostname,
+      mcLastModified: localFile.lastUpdated.toISOString(),
+      mcVersion: config.drive.structureVersion,
     }
     logger.info(
-      `Creating new proxy file: ${DriveMcWorldFile.formatDriveName(createProperties)}`,
+      `Creating new proxy file: ${DriveMcWorldFile.formatDriveName(appProperties)}`,
     )
-    await DriveMcWorldFile.create(localFile.zip(), createProperties)
+    await DriveMcWorldFile.create(localFile.zip(), appProperties)
   }
 
   // Upsert master on remote
   if (!remoteMasterFile) {
-    const createProperties: CreateProperties = {
+    const appProperties: AppProperties = {
       mcInstance: instance.id,
       mcSaveName: localFile.getFileName(),
       mcType: 'master',
+      mcLastModified: localFile.lastUpdated.toISOString(),
+      mcVersion: config.drive.structureVersion,
     }
     logger.info(
-      `Creating new master file: ${DriveMcWorldFile.formatDriveName(createProperties)}`,
+      `Creating new master file: ${DriveMcWorldFile.formatDriveName(appProperties)}`,
     )
     remoteMasterFile = await DriveMcWorldFile.create(
       localFile.zip(),
-      createProperties,
+      appProperties,
     )
   } else if (localFile.isNewerThan(remoteMasterFile)) {
     logger.info(`Updating master file: ${remoteMasterFile.getDriveName()}`)
     await remoteMasterFile.update(localFile.zip())
   }
-  // Update local file's lastUpdate to prevent update looping
-  // TODO proxy file update is always firing because it updates much earlier than master
-  localFile.setLastModified(remoteMasterFile.lastUpdated)
 }
 
 export async function updateLocal() {

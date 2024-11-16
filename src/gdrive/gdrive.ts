@@ -9,10 +9,13 @@ import logger from '../logger'
 
 let MC_DIR_ID = ''
 
-export type CreateProperties = { mcInstance: string; mcSaveName: string } & (
-  | { mcHost: string; mcType: 'proxy' }
-  | { mcType: 'master' }
-)
+// GDrive AppProperties cannot hold anything other than a string
+export type AppProperties = {
+  mcInstance: string
+  mcSaveName: string
+  mcLastModified: string // ISO 8601 timestamp
+  mcVersion: string // number
+} & ({ mcHost: string; mcType: 'proxy' } | { mcType: 'master' })
 
 const getGDriveService = async () =>
   authorize().then((auth) => google.drive({ version: 'v3', auth }))
@@ -97,7 +100,7 @@ async function executeSearchFiles(q: string): Promise<drive_v3.Schema$File[]> {
   const res = await service.files.list({
     pageSize: 100,
     q,
-    fields: 'nextPageToken, files(id, name, appProperties, modifiedTime)',
+    fields: 'nextPageToken, files(id, name, appProperties)',
   })
   let data: drive_v3.Schema$FileList | undefined = res.data
   if (data.files) {
@@ -149,7 +152,7 @@ async function getOrCreateMinecraftSyncDir(): Promise<string> {
 export async function uploadFile(
   stream: Readable,
   name: string,
-  appProperties: CreateProperties,
+  appProperties: AppProperties,
 ): Promise<drive_v3.Schema$File> {
   const service = await getGDriveService()
   const dirId = await getOrCreateMinecraftSyncDir()
@@ -168,7 +171,7 @@ export async function uploadFile(
     const response = await service.files.create({
       requestBody: fileMetadata,
       media,
-      fields: 'id, name, modifiedTime, appProperties',
+      fields: 'id, name, appProperties',
     })
     // GDrive returns a 200 OK when creating a file for some reason?
     if (response.status != 200) {
@@ -195,7 +198,7 @@ export async function updateFile(
     const response = await service.files.update({
       fileId,
       media,
-      fields: 'id, name, modifiedTime, appProperties',
+      fields: 'id, name, appProperties',
     })
     if (response.status != 200) {
       throw response.statusText

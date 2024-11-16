@@ -77,7 +77,6 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
         fs.rmSync(fpZip)
       }
     }
-    logger.debug('Finished new file creation')
   }
 
   async update(downloadStream: Readable, lastModified: Date) {

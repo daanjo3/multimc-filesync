@@ -13,5 +13,6 @@ export default {
   drive: {
     baseDirName: process.env.MMC_SYNC_DRIVE_DIR ?? 'MinecraftSync',
     appCredentials,
+    structureVersion: '2',
   },
 }

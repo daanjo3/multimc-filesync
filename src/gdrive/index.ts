@@ -1,5 +1,5 @@
-import gdrive, { type CreateProperties } from './gdrive'
+import gdrive, { type AppProperties } from './gdrive'
 
 export default gdrive
 
-export type { CreateProperties }
+export type { AppProperties }

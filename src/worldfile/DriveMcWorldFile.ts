@@ -1,5 +1,5 @@
 import type { drive_v3 } from 'googleapis'
-import gdrive, { type CreateProperties } from '../gdrive'
+import gdrive, { type AppProperties } from '../gdrive'
 import { Readable } from 'node:stream'
 import { McWorldFile } from './McWorldFile'
 import type { worldfile as wf } from './types'
@@ -9,12 +9,27 @@ const hasRequiredFields = (
   file: drive_v3.Schema$File,
 ): file is wf.DriveMcFile =>
   !!file.name &&
-  !!file.modifiedTime &&
   !!file.appProperties?.mcSaveName &&
   !!file.appProperties?.mcInstance &&
   !!file.appProperties?.mcType &&
   // If not master a host needs to be provided
-  (file.appProperties.mcType == 'master' || !!file.appProperties.mcHost)
+  (file.appProperties.mcType == 'master' || !!file.appProperties.mcHost) &&
+  !!file.appProperties?.mcLastModified &&
+  !!file.appProperties?.mcVersion // number
+
+const upgradeDriveFile = (file: drive_v3.Schema$File) => {
+  let version
+  if (!file.appProperties?.mcVersion) {
+    version = 1
+  }
+  version = Number.parseInt(file.appProperties!.mcVersion)
+  if (Number.isNaN(version)) {
+    throw `mcVersion of file ${file.name} is NaN`
+  }
+  if (version < 2) {
+    throw `This script can't handle files created before version 2 and does not define data migration logic (yet)`
+  }
+}
 
 export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
   constructor(
@@ -27,13 +42,15 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
   }
 
   static fromFile(file: drive_v3.Schema$File) {
+    upgradeDriveFile(file)
     if (!hasRequiredFields(file)) {
       logger.debug({ file: JSON.stringify(file, null, 2) })
       throw 'Drive file does not have all required fields'
     }
+
     return new DriveMcWorldFile(
       file.appProperties.mcSaveName,
-      new Date(file.modifiedTime),
+      new Date(file.appProperties.mcLastModified),
       file.appProperties.mcInstance,
       file,
     )
@@ -41,7 +58,7 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
 
   static async create(
     stream: Readable,
-    appProperties: CreateProperties,
+    appProperties: AppProperties,
   ): Promise<DriveMcWorldFile> {
     try {
       const name = DriveMcWorldFile.formatDriveName(appProperties)
@@ -92,19 +109,19 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
 
   getDriveName() {
     return DriveMcWorldFile.formatDriveName(
-      this.data.appProperties as CreateProperties,
+      this.data.appProperties as AppProperties,
     )
   }
 
-  static formatDriveName(appProperties: CreateProperties) {
-    return `${appProperties.mcInstance}-${appProperties.mcSaveName}-${appProperties.mcType == 'master' ? 'master' : `proxy:${appProperties.mcHost}`}`
+  static formatDriveName(appProperties: AppProperties) {
+    return `${appProperties.mcInstance}-${appProperties.mcSaveName}-${appProperties.mcType == 'master' ? 'master' : `proxy:${appProperties.mcHost}`}-${appProperties.mcLastModified}`
   }
 
   getMeta() {
     return {
       name: this.getFileName(),
       id: this.data.id!,
-      modifiedTime: this.data.modifiedTime,
+      modifiedTime: this.data.appProperties!.mcLastModified,
       appProperties: this.data.appProperties,
     }
   }

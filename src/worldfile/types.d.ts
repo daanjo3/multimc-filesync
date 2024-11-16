@@ -1,16 +1,11 @@
 import type { drive_v3 } from 'googleapis'
+import type { AppProperties } from '../gdrive'
 
 export namespace worldfile {
   type SourceType = 'gdrive' | 'local'
   type SourceFile = BunFile | drive_v3.Schema$File
 
-  interface GDriveAppProperties {
-    mcInstance: string
-    mcHost: string
-    mcType: string
-  }
-
   type DriveMcFile = drive_v3.Schema$File & {
-    appProperties: GDriveAppProperties
+    appProperties: AppProperties
   } & { name: string; modifiedTime: string }
 }
