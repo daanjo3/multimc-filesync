@@ -18,12 +18,17 @@ const getGDriveService = async () =>
   authorize().then((auth) => google.drive({ version: 'v3', auth }))
 
 async function getExistingDir(dirName: string): Promise<string | null> {
+  logger.silly('Getting GDrive service')
   const service = await getGDriveService()
+
+  logger.silly(`Searching directory by name ${dirName}`)
   const res = await service.files.list({
     pageSize: 2,
     q: `mimeType = \'application/vnd.google-apps.folder\' and name = \'${dirName}\'`,
     fields: 'files(id, name)',
   })
+  logger.silly(`Done searching directory by name ${dirName}`)
+
   const files = res.data.files
   if ((files?.length ?? 0) > 2) {
     throw new Error(
@@ -118,15 +123,27 @@ async function getOrCreateMinecraftSyncDir(): Promise<string> {
     return MC_DIR_ID
   }
   logger.debug(`Fetching or creating dir ${config.drive.baseDirName}`)
-  let dirId = await getExistingDir(config.drive.baseDirName)
-  if (dirId != null) {
-    MC_DIR_ID = dirId
-    logger.debug(`Found pre-existing directory with id: ${MC_DIR_ID}`)
-    return MC_DIR_ID
+  try {
+    let dirId = await getExistingDir(config.drive.baseDirName)
+    if (dirId != null) {
+      MC_DIR_ID = dirId
+      logger.debug(`Found pre-existing directory with id: ${MC_DIR_ID}`)
+      return MC_DIR_ID
+    }
+  } catch (err) {
+    logger.error(err)
+    throw 'Failed to fetch MultiMC Filesync directory in GDrive'
   }
-  MC_DIR_ID = await createDir(config.drive.baseDirName)
-  logger.debug(`Created new directory with id: ${MC_DIR_ID}`)
-  return MC_DIR_ID
+  
+  try {
+    MC_DIR_ID = await createDir(config.drive.baseDirName)
+    logger.debug(`Created new directory with id: ${MC_DIR_ID}`)
+    return MC_DIR_ID
+  } catch (err) {
+    logger.error(err)
+    throw 'Failed to create MultiMC Filesync directory in GDrive'
+  }
+  
 }
 
 // TODO change to make use of resumable update
@@ -200,6 +217,7 @@ export async function downloadFile(fileId: string) {
 }
 
 export default {
+  getOrCreateMinecraftSyncDir,
   searchFiles,
   uploadFile,
   updateFile,

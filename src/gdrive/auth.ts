@@ -18,16 +18,15 @@ const SCOPES = [
 const TOKEN_PATH = path.join(config.baseDir!, 'token.json')
 const CREDENTIALS_PATH = path.join(config.baseDir!, 'credentials.json')
 
-if (!fs.existsSync(CREDENTIALS_PATH)) {
-  fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(config.drive.appCredentials, null, 2))
-}
-
 /**
  * Reads previously authorized credentials from the save file.
  *
  * @return {Promise<OAuth2Client|null>}
  */
 async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
+  if (!fs.existsSync(CREDENTIALS_PATH)) {
+    fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(config.drive.appCredentials, null, 2))
+  }
   try {
     const credentials = await Bun.file(TOKEN_PATH).json()
     return google.auth.fromJSON(credentials) as OAuth2Client
