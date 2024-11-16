@@ -1,4 +1,4 @@
-import './init'
+import init from './init'
 import process from 'process'
 import { parseArgs } from 'util'
 import { updateRemote, updateLocal } from './sync'
@@ -7,6 +7,8 @@ const { positionals } = parseArgs({
   args: Bun.argv,
   allowPositionals: true,
 })
+
+await init()
 
 // TODO rename to 'remote' / 'local' so the command becomes: `sync remote` or `sync local`
 if (positionals.length < 3) {
