@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import gdrive from './gdrive'
 
-export default new Promise((resolve, reject) => {
+async function init(): Promise<void> {
   // Bunch of stuff that needs to be handled before first script run
   if (!config.baseDir) {
     throw 'Environment variable MMC_SYNC_DIR is not set'
@@ -22,5 +22,7 @@ export default new Promise((resolve, reject) => {
   }
 
   // Initialize the MCSync directory as a means to handle first-time auth
-  gdrive.getOrCreateMinecraftSyncDir().then(() => resolve(null))
-})
+  await gdrive.getOrCreateMinecraftSyncDir()
+}
+
+export default init
