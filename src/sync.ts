@@ -1,5 +1,5 @@
 import multimc, { type MultiMcInstance } from './multimc'
-import gdrive from './gdrive/gdrive'
+import gdrive, { type CreateProperties } from './gdrive/gdrive'
 import system from './system'
 import { DriveMcWorldFile, LocalMcWorldFile } from './worldfile'
 import logger from './logger'
@@ -80,30 +80,37 @@ async function updateRemoteFile(
 ) {
   // Upsert proxy on remote
   if (remoteProxyFile) {
-    logger.info(`Update proxy file: ${localFile.getFileName()}`)
+    logger.info(`Update proxy file: ${remoteProxyFile.getDriveName()}`)
     await remoteProxyFile.update(localFile.zip())
   } else {
-    logger.info(`Creating new proxy file: ${localFile.getFileName()}`)
-    await DriveMcWorldFile.create(localFile.zip(), localFile.getFileName(), {
-      mcHost: hostname,
+    const createProperties: CreateProperties = {
       mcInstance: instance.id,
+      mcSaveName: localFile.getFileName(),
       mcType: 'proxy',
-    })
+      mcHost: hostname,
+    }
+    logger.info(
+      `Creating new proxy file: ${DriveMcWorldFile.formatDriveName(createProperties)}`,
+    )
+    await DriveMcWorldFile.create(localFile.zip(), createProperties)
   }
 
   // Upsert master on remote
   if (!remoteMasterFile) {
-    logger.info(`Creating new master file: ${localFile.getFileName()}`)
+    const createProperties: CreateProperties = {
+      mcInstance: instance.id,
+      mcSaveName: localFile.getFileName(),
+      mcType: 'master',
+    }
+    logger.info(
+      `Creating new master file: ${DriveMcWorldFile.formatDriveName(createProperties)}`,
+    )
     remoteMasterFile = await DriveMcWorldFile.create(
       localFile.zip(),
-      localFile.getFileName(),
-      {
-        mcInstance: instance.id,
-        mcType: 'master',
-      },
+      createProperties,
     )
   } else if (localFile.isNewerThan(remoteMasterFile)) {
-    logger.info(`Updating master file: ${localFile.getFileName()}`)
+    logger.info(`Updating master file: ${remoteMasterFile.getDriveName()}`)
     await remoteMasterFile.update(localFile.zip())
   }
   // Update local file's lastUpdate to prevent update looping

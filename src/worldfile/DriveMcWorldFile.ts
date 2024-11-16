@@ -10,6 +10,7 @@ const hasRequiredFields = (
 ): file is wf.DriveMcFile =>
   !!file.name &&
   !!file.modifiedTime &&
+  !!file.appProperties?.mcSaveName &&
   !!file.appProperties?.mcInstance &&
   !!file.appProperties?.mcType &&
   // If not master a host needs to be provided
@@ -31,7 +32,7 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
       throw 'Drive file does not have all required fields'
     }
     return new DriveMcWorldFile(
-      file.name,
+      file.appProperties.mcSaveName,
       new Date(file.modifiedTime),
       file.appProperties.mcInstance,
       file,
@@ -40,10 +41,10 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
 
   static async create(
     stream: Readable,
-    name: string,
     appProperties: CreateProperties,
   ): Promise<DriveMcWorldFile> {
     try {
+      const name = DriveMcWorldFile.formatDriveName(appProperties)
       const newFile = await gdrive.uploadFile(stream, name, appProperties)
       const newWorldFile = this.fromFile(newFile)
       logger.debug(`Created new file ${newWorldFile.getFileName()}`, {
@@ -53,22 +54,6 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
     } catch (err) {
       throw `Failed to upload new save file\nerr: ${err}`
     }
-  }
-
-  async downloadReadable(): Promise<Readable> {
-    return await gdrive.downloadFile(this.data.id!)
-  }
-
-  async download(): Promise<Buffer> {
-    const stream = await gdrive.downloadFile(this.data.id!)
-    const _buff = []
-    for await (const chunk of stream) {
-      _buff.push(chunk)
-    }
-    logger.debug(`Downloaded file ${this.getFileName()}`, {
-      meta: this.getMeta(),
-    })
-    return Buffer.from(_buff)
   }
 
   async update(stream: Readable): Promise<DriveMcWorldFile> {
@@ -85,6 +70,10 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
     }
   }
 
+  async downloadReadable(): Promise<Readable> {
+    return await gdrive.downloadFile(this.data.id!)
+  }
+
   getType(): 'proxy' | 'master' {
     const type = this.data.appProperties!.mcType
     if (!type) {
@@ -96,11 +85,19 @@ export class DriveMcWorldFile extends McWorldFile<drive_v3.Schema$File> {
     return type
   }
 
+  // Indirectly taken from appProperties
   getFileName() {
-    if (this.name.includes('.zip')) {
-      return this.name.substring(0, this.name.length - '.zip'.length)
-    }
     return this.name
+  }
+
+  getDriveName() {
+    return DriveMcWorldFile.formatDriveName(
+      this.data.appProperties as CreateProperties,
+    )
+  }
+
+  static formatDriveName(appProperties: CreateProperties) {
+    return `${appProperties.mcInstance}-${appProperties.mcSaveName}-${appProperties.mcType == 'master' ? 'master' : `proxy:${appProperties.mcHost}`}`
   }
 
   getMeta() {

@@ -9,7 +9,7 @@ import logger from '../logger'
 
 let MC_DIR_ID = ''
 
-export type CreateProperties = { mcInstance: string } & (
+export type CreateProperties = { mcInstance: string; mcSaveName: string } & (
   | { mcHost: string; mcType: 'proxy' }
   | { mcType: 'master' }
 )

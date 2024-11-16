@@ -54,9 +54,10 @@ const existingRemote = existing.find((f) => f.isSameSave(file))
 if (existingRemote) {
   await existingRemote.update(file.zip())
 } else {
-  DriveMcWorldFile.create(file.zip(), file.getFileName(), {
+  DriveMcWorldFile.create(file.zip(), {
     mcInstance: MCINSTANCE,
     mcHost: MCHOST,
     mcType: type,
+    mcSaveName: file.getFileName(),
   })
 }
