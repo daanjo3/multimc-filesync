@@ -11,25 +11,25 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup bun environment
         uses: oven-sh/setup-bun@v2
 
       - name: Install project bun dependencies
         run: bun install
-      
+
       - name: Building linux binary
         run: bun run build:linux
-      
+
       - name: Building windows binary
         run: bun run build:windows
-      
+
       - name: Get release
         id: get_release
         uses: bruceadams/get-release@v1.3.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      
+
       - name: Upload linux binary
         uses: actions/upload-release-asset@v1.0.2
         env:
@@ -39,7 +39,7 @@ jobs:
           asset_path: ./out/filesync-linux-x64
           asset_name: filesync-linux-x64-${{ steps.get_release.outputs.tag_name }}
           asset_content_type: application/octet-stream
-      
+
       - name: Upload windows binary
         uses: actions/upload-release-asset@v1.0.2
         env:
