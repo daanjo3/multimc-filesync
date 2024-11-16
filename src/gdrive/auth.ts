@@ -25,7 +25,10 @@ const CREDENTIALS_PATH = path.join(config.baseDir!, 'credentials.json')
  */
 async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
   if (!fs.existsSync(CREDENTIALS_PATH)) {
-    fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(config.drive.appCredentials, null, 2))
+    fs.writeFileSync(
+      CREDENTIALS_PATH,
+      JSON.stringify(config.drive.appCredentials, null, 2),
+    )
   }
   try {
     const credentials = await Bun.file(TOKEN_PATH).json()

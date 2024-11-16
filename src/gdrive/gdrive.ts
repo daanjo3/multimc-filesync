@@ -134,7 +134,7 @@ async function getOrCreateMinecraftSyncDir(): Promise<string> {
     logger.error(err)
     throw 'Failed to fetch MultiMC Filesync directory in GDrive'
   }
-  
+
   try {
     MC_DIR_ID = await createDir(config.drive.baseDirName)
     logger.debug(`Created new directory with id: ${MC_DIR_ID}`)
@@ -143,7 +143,6 @@ async function getOrCreateMinecraftSyncDir(): Promise<string> {
     logger.error(err)
     throw 'Failed to create MultiMC Filesync directory in GDrive'
   }
-  
 }
 
 // TODO change to make use of resumable update
