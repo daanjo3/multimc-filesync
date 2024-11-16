@@ -19,7 +19,10 @@ const TOKEN_PATH = path.join(config.baseDir!, 'token.json')
 const CREDENTIALS_PATH = path.join(config.baseDir!, 'credentials.json')
 
 if (!fs.existsSync(CREDENTIALS_PATH)) {
-  fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(config.drive.appCredentials, null, 2))
+  fs.writeFileSync(
+    CREDENTIALS_PATH,
+    JSON.stringify(config.drive.appCredentials, null, 2),
+  )
 }
 
 /**
