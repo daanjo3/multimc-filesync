@@ -203,7 +203,7 @@ export class LocalMcWorldFile extends McWorldFile<BunFile> {
 
   getFilePath() {
     if (!path.isAbsolute(this.name)) {
-      throw 'Filename is not absolute path!'
+      throw `Filename ${this.name} is not absolute path!`
     }
     return this.name
   }
