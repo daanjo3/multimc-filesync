@@ -34,3 +34,6 @@ bun run build:windows
 # Default build (linux)
 bun run build
 ```
+
+## Installation GUI
+https://v2.tauri.app/start/prerequisites/

@@ -6,7 +6,8 @@
     "format": "prettier . --write",
     "build": "bun run build:linux",
     "build:linux": "bun build --compile --env-file=.env --target=bun-linux-x64 ./src/index.ts --outfile out/filesync-linux-x64",
-    "build:windows": "bun build --compile --env-file=.env --target=bun-windows-x64 ./src/index.ts --outfile out/filesync-windows-x64.exe"
+    "build:windows": "bun build --compile --env-file=.env --target=bun-windows-x64 ./src/index.ts --outfile out/filesync-windows-x64.exe",
+    "run:app": "npx qode ./src/app.ts"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
@@ -18,10 +19,14 @@
   },
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
+    "@nodegui/nodegui": "^0.70.0",
     "@types/node": "20",
     "adm-zip": "^0.5.16",
     "google-auth-library": "^9.14.0",
     "googleapis": "144.0.0",
     "winston": "^3.15.0"
-  }
+  },
+  "trustedDependencies": [
+    "@nodegui/nodegui"
+  ]
 }
