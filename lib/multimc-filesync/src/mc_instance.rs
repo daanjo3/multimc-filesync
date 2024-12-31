@@ -1,6 +1,6 @@
-use lib::{error::Error, error::ErrorKind};
+use lib::{create_json_file, download_json_file, error::{Error, ErrorKind}};
 use serde::{Serialize, Deserialize};
-use drive_v3::{objects::{File, UploadType}, Drive};
+use drive_v3::{objects::File, Drive};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InstanceConfigRoot {
@@ -38,25 +38,13 @@ const INSTANCE_CFG_NAME: &str = "instance-config.json";
 const MIME_TYPE_JSON: &str = "application/json";
 
 fn create_instance_config(drive: &Drive) -> Result<File, Error> {
-    let file_data = serde_json::to_string(&InstanceConfigRoot::new())?;
-
-    let file_metadata = File {
+    let new_file = create_json_file(drive, InstanceConfigRoot::new(), File {
         name: Some( INSTANCE_CFG_NAME.to_string() ),
         mime_type: Some( MIME_TYPE_JSON.to_string() ),
         description: Some( "Configuration file for MultiMC instances".to_string() ),
         parents: Some(vec!["appDataFolder".to_string()]),
-        spaces: Some(vec!["appDataFolder".to_string()]),
         ..Default::default()
-    };
-
-    // File metadata is not being sent along with the file, see: https://stackoverflow.com/questions/42877817/file-upload-via-rest-v3-appears-as-untitled
-    let new_file = drive.files.create()
-        .upload_type(UploadType::Media)
-        .metadata(&file_metadata)
-        .content_string(file_data)
-        .execute()?;
-
-    println!("Uploaded new file");
+    })?;
 
     Ok(new_file)
 }
@@ -87,13 +75,8 @@ fn get_instance_config_ref(drive: &Drive) -> Result<File, Error> {
 }
 
 pub fn get_instance_config(drive: &Drive) -> Result<InstanceConfigRoot, Error> {
-    let cfg_ref = get_instance_config_ref(&drive)?;
-    let file_id = cfg_ref.id.ok_or(Error::new(ErrorKind::FileSync, "No file ID present"))?;
-    let file_bytes = drive.files.get_media(&file_id).execute()?;
-    return serde_json::from_slice(&file_bytes).map_err(| err| {
-        println!("Failed deserializing json file: {:?}", String::from_utf8_lossy(&file_bytes));
-        Error::from(err)
-    });
+    let cfg_metadata = get_instance_config_ref(&drive)?;
+    return download_json_file(drive, cfg_metadata);
 }
 
 pub fn clear_appdata(drive: &Drive) -> Result<usize, Error> {
