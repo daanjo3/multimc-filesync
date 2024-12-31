@@ -1,6 +1,8 @@
 use std::fmt;
 
-#[derive(Debug, PartialEq, Eq)]
+use serde::Serialize;
+
+#[derive(Debug, PartialEq, Eq, Serialize)]
 pub enum ErrorKind {
     /// Errors related to GDrive communication
     GDrive,
@@ -12,7 +14,7 @@ pub enum ErrorKind {
     Serialization
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
 pub struct Error {
     pub message: String,
     pub kind: ErrorKind

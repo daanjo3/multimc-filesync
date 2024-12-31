@@ -2262,6 +2262,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "multimc_filesync"
+version = "0.1.0"
+dependencies = [
+ "drive-v3",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "nanoid"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3977,7 +3986,7 @@ dependencies = [
 name = "tauri-app"
 version = "0.1.0"
 dependencies = [
- "drive-v3",
+ "multimc_filesync",
  "serde",
  "serde_json",
  "tauri",

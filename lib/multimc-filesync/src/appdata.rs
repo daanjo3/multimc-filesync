@@ -1,6 +1,8 @@
-use lib::{create_json_file, download_json_file, error::{Error, ErrorKind}};
 use serde::{Serialize, Deserialize};
 use drive_v3::{objects::File, Drive};
+
+use crate::error::{Error, ErrorKind};
+use crate::json::{create_json_file, download_json_file, update_json_file};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InstanceConfigRoot {
@@ -49,34 +51,36 @@ fn create_instance_config(drive: &Drive) -> Result<File, Error> {
     Ok(new_file)
 }
 
-fn get_instance_config_ref(drive: &Drive) -> Result<File, Error> {
+fn get_instance_config_metadata(drive: &Drive) -> Result<File, Error> {
     let file_list = drive.files.list()
         .spaces("appDataFolder")
         .fields("files(name, id, mimeType)") // Set what fields will be returned
         .q(format!("name = '{INSTANCE_CFG_NAME}'"))
         .execute()?;
 
+    
     match file_list.files {
         Some(files) => {
-            println!("Found {} file while search for instance config", files.len());
             if files.len() == 0 {
                 return create_instance_config(drive);
             }
             if files.len() > 1 {
-                return Err(Error::new(ErrorKind::FileSync, "More than 1 file present"))
+                return Err(Error::new(ErrorKind::FileSync, "More than 1 config present"))
             }
             Ok(files[0].clone())
-        },
-        None => {
-            // Doesn't appear to be called?
-            return create_instance_config(drive);
-        },
+        }
+        None => return Err(Error::new(ErrorKind::GDrive, "Files response was none instead of empty list"))
     }
 }
 
 pub fn get_instance_config(drive: &Drive) -> Result<InstanceConfigRoot, Error> {
-    let cfg_metadata = get_instance_config_ref(&drive)?;
+    let cfg_metadata = get_instance_config_metadata(&drive)?;
     return download_json_file(drive, cfg_metadata);
+}
+
+pub fn update_instance_config(drive: &Drive, cfg: InstanceConfig) -> Result<(), Error> {
+    let cfg_metadata = get_instance_config_metadata(&drive)?;
+    return update_json_file(drive, cfg, cfg_metadata).map(|_| ());
 }
 
 pub fn clear_appdata(drive: &Drive) -> Result<usize, Error> {
