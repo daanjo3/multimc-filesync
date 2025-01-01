@@ -1,4 +1,5 @@
-use multimc_filesync::{appdata::{InstanceConfigRoot, get_instance_config as _get_instance_config}, config::Config, error::Error, get_drive};
+use multimc_filesync::{appdata::{get_instance_config as _get_instance_config, InstanceConfigRoot}, config::Config, error::{Error, ErrorKind}, get_drive};
+use rfd::FileDialog;
 use std::env;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -11,6 +12,22 @@ fn greet(name: &str) -> String {
 fn get_instance_config(state: tauri::State<Config>) -> Result<InstanceConfigRoot, Error> {
     let drive = get_drive(&state)?;
     return _get_instance_config(&drive);
+}
+
+#[tauri::command]
+fn pick_directory() -> Result<String, Error> {
+    
+    let path = FileDialog::new()
+        .set_directory("/")
+        .pick_folder();
+
+    match path {
+        Some(buf) => {
+            let pathstr = buf.to_str().ok_or(Error::new(ErrorKind::Serialization, "Update this errorkind to something new"))?;
+            return Ok(pathstr.to_string());
+        }
+        None => return Err(Error::new(ErrorKind::Serialization, "No file found, update this errorkind"))
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
