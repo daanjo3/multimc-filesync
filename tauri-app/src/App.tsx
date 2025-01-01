@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
 import { InstanceConfigRoot } from "./types";
+import { ActionBar, ActionBarContent, ActionBarRoot, ActionBarSelectionTrigger, ActionBarSeparator, HStack, StackSeparator, Text, VStack } from "@chakra-ui/react";
+import { Button } from "./components/ui/button";
+import { LuShare, LuTrash2 } from "react-icons/lu";
 
 function App() {
   const [cfg, setCfg] = useState<InstanceConfigRoot>({ instances: [] });
@@ -26,13 +28,28 @@ function App() {
 
   return (
     <main className="container">
-      <h1>MultiMC Filesync</h1>
-
-      <button onClick={loadConfiguration}>Fetch config</button>
-      <ul>
-        {cfg.instances.map((instance) => (<li>{instance.name}</li>))}
-      </ul>
-      <button>Register new instance</button>
+        <VStack className="h-screen w-screen px-4">
+          
+          <Text className="h-5 px-7 my-4 text-3xl font-bold">MultiMC Filesync</Text>
+          
+          <VStack className="h-full w-full bg-slate-700">  
+            <div>
+              <ul>
+                {cfg.instances.map((instance) => (<li>{instance.name}</li>))}
+              </ul>
+            </div>
+            <Button>Register new instance</Button>
+          </VStack>
+          
+          <ActionBarRoot open={true}>
+            <ActionBarContent className="w-full justify-end">
+              <Button variant="outline" size="sm" onClick={loadConfiguration}>
+                Fetch config
+              </Button>
+            </ActionBarContent>
+          </ActionBarRoot>
+                    
+        </VStack>    
     </main>
   );
 }
