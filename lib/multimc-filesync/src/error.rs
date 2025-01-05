@@ -11,7 +11,10 @@ pub enum ErrorKind {
     FileSync,
 
     /// Errors related to serialization mismatches
-    Serialization
+    Serialization,
+
+    /// Errors related to navigating through MultiMc
+    MultiMcFs
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize)]

@@ -32,7 +32,7 @@ pub struct InstanceDeviceConfig {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InstanceSaveReference {
     pub name: String,
-    pub id: String,
+    pub id: Option<String>, // Only populated on remote save
     pub path: Option<String> // Only populated on device save
 }
 

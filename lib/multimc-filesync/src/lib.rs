@@ -2,6 +2,7 @@ pub mod error;
 pub mod config;
 pub mod appdata;
 pub mod json;
+pub mod instance;
 
 use drive_v3::{Credentials, Drive};
 use std::path::Path;
