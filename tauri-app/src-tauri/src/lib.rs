@@ -1,4 +1,4 @@
-use multimc_filesync::{appdata::{get_instance_config as _get_instance_config, InstanceConfigRoot}, config::Config, error::{Error, ErrorKind}, get_drive};
+use multimc_filesync::{appdata::{get_instance_config as _get_instance_config, InstanceConfigRoot}, config::Config, error::{Error, ErrorKind}, get_drive, instance::{index_mmc_files, MMCFileIndex}};
 use rfd::FileDialog;
 use std::env;
 
@@ -15,18 +15,14 @@ fn get_instance_config(state: tauri::State<Config>) -> Result<InstanceConfigRoot
 }
 
 #[tauri::command]
-fn pick_directory() -> Result<String, Error> {
-    
-    let path = FileDialog::new()
+fn load_mmc_index() -> Result<MMCFileIndex, Error> {
+    let mmc_path_opt = FileDialog::new()
         .set_directory("/")
         .pick_folder();
 
-    match path {
-        Some(buf) => {
-            let pathstr = buf.to_str().ok_or(Error::new(ErrorKind::Serialization, "Update this errorkind to something new"))?;
-            return Ok(pathstr.to_string());
-        }
-        None => return Err(Error::new(ErrorKind::Serialization, "No file found, update this errorkind"))
+    match mmc_path_opt {
+        Some(mmc_path) => index_mmc_files(&mmc_path),
+        None => Err(Error::new(ErrorKind::MultiMcFs, "No path was selected")) 
     }
 }
 
@@ -38,7 +34,7 @@ pub fn run() {
             credentials_path: env!("MMFS_CREDENTIALS_PATH").to_string()
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, get_instance_config])
+        .invoke_handler(tauri::generate_handler![greet, get_instance_config, load_mmc_index])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

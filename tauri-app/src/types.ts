@@ -19,3 +19,19 @@ export interface InstanceSaveReference {
     id: string,
     path?: String // Only populated on device save
 }
+
+export interface MMCFileIndex {
+    path: string,
+    instances: MMCInstance[]
+}
+
+export interface MMCInstance {
+    name: string,
+    path: string,
+    saves: MMCSave[]
+}
+
+export interface MMCSave {
+    name: string,
+    path: string
+}

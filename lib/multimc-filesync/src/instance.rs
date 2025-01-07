@@ -1,21 +1,23 @@
-use std::{fs::{read_dir, DirEntry}, path::PathBuf};
+use std::{fs::read_dir, path::PathBuf};
+
+use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, ErrorKind};
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MMCFileIndex {
     pub path: String,
     pub instances: Vec<MMCInstance>
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MMCInstance {
     pub name: String,
     pub path: String,
     pub saves: Vec<MMCSave>
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MMCSave {
     pub name: String,
     pub path: String,
@@ -76,7 +78,6 @@ fn index_instance_saves(instance_path: &PathBuf) -> Result<Vec<MMCSave>, Error> 
         .map_err(|err| Error::new(ErrorKind::MultiMcFs, format!("Failed to list saves dir: {}", err)))?
         .iter()
         // TODO fix unwrapping
-        .map(|entry_result| entry_result.unwrap())
         .map(|entry| {
             let name = entry.file_name().into_string().unwrap();
             let path = entry.path().into_os_string().into_string().unwrap();
