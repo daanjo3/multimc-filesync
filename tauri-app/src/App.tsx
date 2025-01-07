@@ -51,21 +51,18 @@ function App() {
 
         <Container height="full" padding="3" rounded="md" borderWidth="2px" border="black.800">
           <Center>
-            {mmcIndex == null ? <Button variant="outline" className="py-auto" onClick={indexMMC}>Load MultiMC</Button> : <InstanceList instances={mmcIndex.instances} />}
+            {mmcIndex == null ? <Button variant="outline" onClick={indexMMC}>Load MultiMC</Button> : <InstanceList instances={mmcIndex.instances} />}
           </Center>
         </Container>
 
-        {/* <VStack className="h-full w-full p-3 border-2">
-          {mmcIndex == null ? <Button variant="outline" className="py-auto" onClick={indexMMC}>Load MultiMC</Button> : <InstanceList instances={mmcIndex.instances} />}
-        </VStack> */}
-
-        <ActionBarRoot open={true}>
+        {/* Is in theory never visible (for now) */}
+        {!isCfgLoaded && <ActionBarRoot open={true}>
           <ActionBarContent className="flex-grow mx-2 justify-end">
             <Button variant="outline" size="sm" onClick={loadConfiguration}>
               Fetch config
             </Button>
           </ActionBarContent>
-        </ActionBarRoot>
+        </ActionBarRoot>}
 
       </VStack>
     </main>
@@ -74,21 +71,26 @@ function App() {
 
 function InstanceList(props: { instances: MMCInstance[] }) {
   return (
-    <AccordionRoot multiple defaultValue={["b"]}>
-      {props.instances.map((instance, index) => (
-        <AccordionItem key={index} value={instance.name} className="border-2 p-2">
-          <AccordionItemTrigger className="font-bold text-slate-900">{instance.name}</AccordionItemTrigger>
-          <AccordionItemContent>
-            <p>
-              path: {instance.path}
-            </p>
-            <p>
-              saves: {instance.saves.length}
-            </p>
-          </AccordionItemContent>
-        </AccordionItem>
-      ))}
-    </AccordionRoot>
+    <Container>
+      <Text fontSize="l" fontWeight="semibold" paddingBottom="2">
+        Local instances
+      </Text>
+      <AccordionRoot multiple>
+        {props.instances.map((instance, index) => (
+          <AccordionItem key={index} value={instance.name} rounded="md" paddingX="2" paddingY="2" borderWidth="2px" border="black.800">
+            <AccordionItemTrigger fontWeight="bold">{instance.name}</AccordionItemTrigger>
+            <AccordionItemContent>
+              <p>
+                path: {instance.path}
+              </p>
+              <p>
+                saves: {instance.saves.length}
+              </p>
+            </AccordionItemContent>
+          </AccordionItem>
+        ))}
+      </AccordionRoot>
+    </Container> 
   )
 }
 
