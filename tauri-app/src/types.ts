@@ -11,7 +11,7 @@ export interface InstanceConfig {
 export interface InstanceDeviceConfig {
     id: string,
     location: string,
-    saves: InstanceSaveReference[]
+    saves: InstanceSaveReference[] // TODO make list of IDs
 }
 
 export interface InstanceSaveReference {
