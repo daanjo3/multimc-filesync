@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { InstanceConfigRoot, MMCFileIndex, MMCInstance } from "./types";
+import { InstanceConfigRoot, MMCFileIndex, MMCInstance, MMCSave } from "./types";
 import { Box, Center, Container, Flex, Text, VStack } from "@chakra-ui/react";
 import { Button } from "./components/ui/button";
 import { AccordionItem, AccordionItemContent, AccordionItemTrigger, AccordionRoot } from "./components/ui/accordion";
@@ -80,12 +80,33 @@ function InstanceList(props: { instances: MMCInstance[] }) {
           <AccordionItem key={index} value={instance.name} rounded="md" paddingX="2" paddingY="2" borderWidth="2px" border="black.800">
             <AccordionItemTrigger fontWeight="bold">{instance.name}</AccordionItemTrigger>
             <AccordionItemContent>
-              <p>
-                path: {instance.path}
-              </p>
-              <p>
-                saves: {instance.saves.length}
-              </p>
+              <VStack gapY="2">
+                <Container>
+                  <Text width="full">
+                    path: {instance.path}
+                  </Text>
+                </Container>
+                <SavesList saves={instance.saves}/>
+              </VStack>
+            </AccordionItemContent>
+          </AccordionItem>
+        ))}
+      </AccordionRoot>
+    </Container> 
+  )
+}
+
+function SavesList(props: { saves: MMCSave[] }) {
+  return (
+    <Container>
+      <AccordionRoot multiple>
+        {props.saves.map((save, index) => (
+          <AccordionItem key={index} value={save.name} rounded="md" paddingX="2" paddingY="2" borderWidth="2px" border="black.800">
+            <AccordionItemTrigger fontWeight="bold">{save.name}</AccordionItemTrigger>
+            <AccordionItemContent>
+              <Text width="full">
+                  path: {save.path}
+              </Text>
             </AccordionItemContent>
           </AccordionItem>
         ))}

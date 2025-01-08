@@ -1,0 +1,2 @@
+dev:
+	@bunx tauri dev
