@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { InstanceConfig, InstanceConfigRoot, InstanceSaveReference, MMCFileIndex, MMCInstance, MMCSave } from "./types";
-import { Box, Center, Container, Text, VStack } from "@chakra-ui/react";
+import { Box, Center, Container, HStack, Text, VStack } from "@chakra-ui/react";
 import { Button } from "./components/ui/button";
 import { AccordionItem, AccordionItemContent, AccordionItemTrigger, AccordionRoot } from "./components/ui/accordion";
 import { ActionBarContent, ActionBarRoot } from "./components/ui/action-bar";
@@ -17,6 +17,8 @@ const newFileSyncMeta = (cfg?: InstanceConfigRoot) => ({
 })
 
 const FileSyncContext = createContext<FileSyncMeta>(newFileSyncMeta())
+
+const DEBUG = true
 
 function App() {
   const [cfg, setCfg] = useState<InstanceConfigRoot>(newInstanceConfigRoot());
@@ -69,12 +71,19 @@ function App() {
             </Center>
           </Container>
 
-          {/* Is in theory never visible (for now) */}
-          <ActionBarRoot open={isCfgLoaded}>
-            <ActionBarContent className="flex-grow mx-2 justify-end">
-              <Button variant="outline" size="sm" onClick={loadConfiguration}>
-                Fetch config
-              </Button>
+          <ActionBarRoot open={!isCfgLoaded || DEBUG}>
+            <ActionBarContent flexGrow="1" marginX="2" justifyContent="space-between" >
+              <Text>
+                Drive config: {isCfgLoaded ? 'set' : 'unset'}
+              </Text>
+              <HStack width="fit" >
+                <Button variant="outline" size="sm" onClick={loadConfiguration}>
+                  Clear appdata
+                </Button>
+                <Button variant="outline" size="sm" onClick={loadConfiguration}>
+                  Fetch config
+                </Button>
+              </HStack>
             </ActionBarContent>
           </ActionBarRoot>
 
