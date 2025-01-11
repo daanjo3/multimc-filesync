@@ -1,4 +1,4 @@
-use multimc_filesync::{appdata::{get_instance_config as _get_instance_config, InstanceConfigRoot}, config::Config, error::{Error, ErrorKind}, get_drive, instance::{index_mmc_files, MMCFileIndex}};
+use multimc_filesync::{appdata::{get_instance_config as _get_instance_config, InstanceConfigRoot}, config::Config, error::{Error, ErrorKind}, gdrive::get_drive, instance::{index_mmc_files, MMCFileIndex}};
 use rfd::FileDialog;
 use std::env;
 
