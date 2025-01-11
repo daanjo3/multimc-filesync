@@ -1,14 +1,10 @@
-import { useContext, useEffect, useMemo, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { useContext } from "react";
 import {
-  type InstanceConfigRoot,
   type InstanceSaveReference,
-  type MMCFileIndex,
   type MMCInstance,
   type MMCSave,
-  newInstanceConfigRoot,
 } from "@/types";
-import { Box, Center, Container, HStack, Text, VStack } from "@chakra-ui/react";
+import { Container,Text } from "@chakra-ui/react";
 import { Button } from "@/components/ui/button";
 import {
   AccordionItem,
@@ -16,8 +12,7 @@ import {
   AccordionItemTrigger,
   AccordionRoot,
 } from "@/components/ui/accordion";
-import { ActionBarContent, ActionBarRoot } from "@/components/ui/action-bar";
-import { FileSyncContext, newFileSyncMeta } from "@/FileSyncContext";
+import { FileSyncContext } from "@/FileSyncContext";
 
 function SaveList(props: { instance: MMCInstance; saves: MMCSave[] }) {
   const filesyncMeta = useContext(FileSyncContext);
