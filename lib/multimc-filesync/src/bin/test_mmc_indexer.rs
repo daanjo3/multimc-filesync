@@ -1,10 +1,8 @@
-use multimc_filesync::instance::index_mmc_files;
+use multimc_filesync::local::index_mmc_files;
 use rfd::FileDialog;
 
 fn main() {
-    let mmc_path = FileDialog::new()
-        .set_directory("/")
-        .pick_folder();
+    let mmc_path = FileDialog::new().set_directory("/").pick_folder();
 
     if mmc_path.is_none() {
         panic!("No path selected")
