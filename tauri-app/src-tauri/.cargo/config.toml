@@ -1,3 +1,4 @@
 [env]
 MMFS_CLIENT_SECRETS_PATH = "client_secrets.json"
 MMFS_CREDENTIALS_PATH = "credentials.json"
+RUST_LOG = "DEBUG"

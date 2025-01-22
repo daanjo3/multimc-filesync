@@ -1,3 +1,4 @@
+use log::debug;
 use std::path::Path;
 
 use drive_v3::{Credentials, Drive};
@@ -12,18 +13,26 @@ const SCOPES: [&'static str; 3] = [
 ];
 
 fn get_credentials(cfg: &Config) -> Result<Credentials, Error> {
+    let credentials_path = &cfg.credentials_path;
+    let secrets_path = &cfg.client_secrets_path;
 
-    if Path::new(&cfg.credentials_path).exists() {
-        let mut stored_credentials = Credentials::from_file(&cfg.credentials_path, &SCOPES)?;
+    if Path::new(credentials_path).exists() {
+        let mut stored_credentials = Credentials::from_file(credentials_path, &SCOPES)?;
         if !stored_credentials.are_valid() {
+            debug!("Credentials are not valid, refreshing.");
             stored_credentials.refresh()?;
-            stored_credentials.store("credentials.json")?;
+            debug!("Writing refreshed credentials to {credentials_path}.");
+            stored_credentials.store(credentials_path)?;
+        } else {
+            debug!("Credentials are valid, returning as-is.");
         }
         return Ok(stored_credentials);
     }
 
-    let stored_credentials = Credentials::from_client_secrets_file(&cfg.client_secrets_path, &SCOPES)?;    
-    stored_credentials.store("credentials.json")?;
+    debug!("No existing credentials found, starting authentication session.");
+    let stored_credentials = Credentials::from_client_secrets_file(secrets_path, &SCOPES)?;
+    debug!("Writing newly obtained credentials to {credentials_path}.");
+    stored_credentials.store(credentials_path)?;
 
     Ok(stored_credentials)
 }

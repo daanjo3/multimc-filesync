@@ -8,8 +8,9 @@ import {
 import { Box, Center, Container, HStack, Text, VStack } from "@chakra-ui/react";
 import { Button } from "../components/ui/button";
 import { ActionBarContent, ActionBarRoot } from "@/components/ui/action-bar";
-import { FileSyncContext, newFileSyncMeta } from "@/FileSyncContext";
+import { FileSyncContext, newFileSyncMeta } from "@/context/FileSyncContext";
 import InstanceList from "./instancelist/InstanceList";
+import { ModalProvider } from "@/context/ModalContext";
 
 const DEBUG = true;
 
@@ -51,51 +52,61 @@ function App() {
   return (
     <main className="container">
       <FileSyncContext.Provider value={contextVal}>
-        <VStack height="vh" width="vw" paddingX="4" paddingBottom="8">
-          <Box paddingX="7" marginY="2">
-            <Center>
-              <Text fontSize="3xl" fontWeight="bold">
-                MultiMC Filesync
-              </Text>
-            </Center>
-          </Box>
+        <ModalProvider>
+          <VStack height="vh" width="vw" paddingX="4" paddingBottom="8">
+            <Box paddingX="7" marginY="2">
+              <Center>
+                <Text fontSize="3xl" fontWeight="bold">
+                  MultiMC Filesync
+                </Text>
+              </Center>
+            </Box>
 
-          <Container
-            height="full"
-            padding="3"
-            rounded="md"
-            borderWidth="2px"
-            border="black.800"
-          >
-            <Center>
-              {mmcIndex == null ? (
-                <Button variant="outline" onClick={indexMMC}>
-                  Load MultiMC
-                </Button>
-              ) : (
-                <InstanceList instances={mmcIndex.instances} />
-              )}
-            </Center>
-          </Container>
-
-          <ActionBarRoot open={!isCfgLoaded || DEBUG}>
-            <ActionBarContent
-              flexGrow="1"
-              marginX="2"
-              justifyContent="space-between"
+            <Container
+              height="full"
+              padding="3"
+              rounded="md"
+              borderWidth="2px"
+              border="black.800"
             >
-              <Text>Drive config: {isCfgLoaded ? "set" : "unset"}</Text>
-              <HStack width="fit">
-                <Button variant="outline" size="sm" onClick={loadConfiguration}>
-                  Clear appdata
-                </Button>
-                <Button variant="outline" size="sm" onClick={loadConfiguration}>
-                  Fetch config
-                </Button>
-              </HStack>
-            </ActionBarContent>
-          </ActionBarRoot>
-        </VStack>
+              <Center>
+                {mmcIndex == null ? (
+                  <Button variant="outline" onClick={indexMMC}>
+                    Load MultiMC
+                  </Button>
+                ) : (
+                  <InstanceList instances={mmcIndex.instances} />
+                )}
+              </Center>
+            </Container>
+
+            <ActionBarRoot open={!isCfgLoaded || DEBUG}>
+              <ActionBarContent
+                flexGrow="1"
+                marginX="2"
+                justifyContent="space-between"
+              >
+                <Text>Drive config: {isCfgLoaded ? "set" : "unset"}</Text>
+                <HStack width="fit">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadConfiguration}
+                  >
+                    Clear appdata
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadConfiguration}
+                  >
+                    Fetch config
+                  </Button>
+                </HStack>
+              </ActionBarContent>
+            </ActionBarRoot>
+          </VStack>
+        </ModalProvider>
       </FileSyncContext.Provider>
     </main>
   );

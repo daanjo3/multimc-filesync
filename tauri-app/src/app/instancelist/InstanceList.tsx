@@ -1,32 +1,20 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { InstanceConfig, MMCInstance } from "@/types";
 import {
   Box,
   Container,
   createListCollection,
-  DialogActionTrigger,
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-  DialogTrigger,
-  HStack,
-  Input,
   ListCollection,
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { Button } from "@/components/ui/button";
 import {
   AccordionItem,
   AccordionItemContent,
   AccordionItemTrigger,
   AccordionRoot,
 } from "@/components/ui/accordion";
-import { FileSyncContext } from "@/FileSyncContext";
+import { FileSyncContext } from "@/context/FileSyncContext";
 import SaveList from "./savelist/SaveList";
 import {
   SelectContent,
@@ -36,7 +24,7 @@ import {
   SelectTrigger,
   SelectValueText,
 } from "@/components/ui/select";
-import { Field } from "@/components/ui/field";
+import { LinkerDialog } from "./LinkerDialog";
 
 function InstanceList(props: { instances: MMCInstance[] }) {
   const filesyncMeta = useContext(FileSyncContext);
@@ -120,7 +108,7 @@ function createInstanceCollection(
       payload: instance,
     })),
   );
-  items.push({ label: "New", value: VALUE_NEW });
+  items.push({ label: "New...", value: VALUE_NEW });
   return createListCollection({ items });
 }
 
@@ -165,67 +153,6 @@ function Linker(props: {
         <LinkerDialog open={dialogOpen} onClose={onModalClose} />
       </Box>
     </Box>
-  );
-}
-
-const nameToId = (value: string) => value.toLowerCase().replace(/ +/g, "-");
-
-function LinkerDialog(props: { open: boolean; onClose: () => void }) {
-  const [name, setName] = useState("");
-  const [id, setId] = useState("");
-
-  const onChange = (value: string) => {
-    setName(value);
-    setId(nameToId(value));
-  };
-
-  return (
-    <DialogRoot
-      open={props.open}
-      placement="center"
-      onEscapeKeyDown={props.onClose}
-    >
-      <DialogContent zIndex="modal">
-        <DialogHeader>
-          <DialogTitle fontWeight="bold">Register new instance</DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          <VStack>
-            <p>
-              Fill in the name of your instance below. Note that this name
-              cannot be the same as any other registered instance and it will be
-              used to uniquely identify your instance
-            </p>
-            <Field label="name">
-              <Input
-                variant="subtle"
-                placeholder="Unique name of this instance"
-                paddingLeft="1"
-                value={name}
-                onChange={(e) => onChange(e.currentTarget.value)}
-              />
-            </Field>
-            <Field label="id (generated)">
-              <Input
-                paddingLeft="1"
-                disabled
-                value={id}
-                variant="subtle"
-              ></Input>
-            </Field>
-          </VStack>
-        </DialogBody>
-        <DialogFooter>
-          <DialogActionTrigger asChild>
-            <Button onClick={props.onClose} variant="outline">
-              Cancel
-            </Button>
-          </DialogActionTrigger>
-          <Button onClick={props.onClose}>Save</Button>
-        </DialogFooter>
-        <DialogCloseTrigger />
-      </DialogContent>
-    </DialogRoot>
   );
 }
 

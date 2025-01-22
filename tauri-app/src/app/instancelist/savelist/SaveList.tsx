@@ -12,7 +12,7 @@ import {
   AccordionItemTrigger,
   AccordionRoot,
 } from "@/components/ui/accordion";
-import { FileSyncContext } from "@/FileSyncContext";
+import { FileSyncContext } from "@/context/FileSyncContext";
 
 function SaveList(props: { instance: MMCInstance; saves: MMCSave[] }) {
   const filesyncMeta = useContext(FileSyncContext);

@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { type InstanceConfigRoot, newInstanceConfigRoot } from "./types";
+import { type InstanceConfigRoot, newInstanceConfigRoot } from "@/types";
 
 export interface FileSyncMeta {
   cfg: InstanceConfigRoot;
