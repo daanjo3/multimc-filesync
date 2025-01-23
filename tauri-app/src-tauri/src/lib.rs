@@ -1,8 +1,7 @@
 use multimc_filesync::{
-    appdata::{instanceconfig::InstanceConfigRoot, AppDataManager},
     config::Config,
     error::{Error, ErrorKind},
-    gdrive::get_drive,
+    gdrive::{appdata::AppData, get_drive, instanceconfig::{InstanceConfigManager, InstanceConfigRoot}},
     local::{index_mmc_files, MMCFileIndex},
 };
 use rfd::FileDialog;
@@ -11,8 +10,7 @@ use std::env;
 #[tauri::command]
 fn get_instance_config(state: tauri::State<Config>) -> Result<InstanceConfigRoot, Error> {
     let drive = get_drive(&state)?;
-    let manager = AppDataManager::new(&drive);
-    return manager.get_instance_config();
+    InstanceConfigManager::new(&drive).load()
 }
 
 #[tauri::command]

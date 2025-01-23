@@ -1,3 +1,7 @@
+pub mod instanceconfig;
+pub mod appdata;
+pub mod json;
+
 use log::debug;
 use std::path::Path;
 

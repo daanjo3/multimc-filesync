@@ -1,4 +1,7 @@
-use multimc_filesync::{appdata::AppDataManager, config::Config, gdrive::get_drive};
+use multimc_filesync::{
+    config::Config,
+    gdrive::{appdata::AppData, get_drive, instanceconfig::InstanceConfigManager},
+};
 
 fn main() {
     let cfg = Config {
@@ -6,8 +9,8 @@ fn main() {
         credentials_path: "./credentials.json".to_string(),
     };
     let drive = get_drive(&cfg).unwrap();
-    let manager = AppDataManager::new(&drive);
+    let mut manager = InstanceConfigManager::new(&drive);
 
-    let instance_cfg = manager.get_instance_config().unwrap();
+    let instance_cfg = manager.load().unwrap();
     println!("{:?}", instance_cfg);
 }
