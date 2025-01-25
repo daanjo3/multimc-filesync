@@ -11,8 +11,7 @@ import { ActionBarContent, ActionBarRoot } from "@/components/ui/action-bar";
 import { FileSyncContext, newFileSyncMeta } from "@/context/FileSyncContext";
 import InstanceList from "./instancelist/InstanceList";
 import { ModalProvider } from "@/context/ModalContext";
-
-const DEBUG = true;
+import { ActionBar } from "./ActionBar";
 
 function App() {
   const [cfg, setCfg] = useState<InstanceConfigRoot>(newInstanceConfigRoot());
@@ -25,6 +24,18 @@ function App() {
       setCfg(await invoke<InstanceConfigRoot>("get_instance_config"));
       setCfgLoaded(true);
       console.debug("Configuration loaded\n", JSON.stringify(cfg));
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function clearConfiguration() {
+    try {
+      console.debug("Clearing configuration");
+      await invoke<InstanceConfigRoot>("clear_instance_config");
+      setCfg(newInstanceConfigRoot()) 
+      setCfgLoaded(false);
+      console.debug("Configuration cleared\n", JSON.stringify(cfg));
     } catch (err) {
       console.error(err);
     }
@@ -80,31 +91,8 @@ function App() {
               </Center>
             </Container>
 
-            <ActionBarRoot open={!isCfgLoaded || DEBUG}>
-              <ActionBarContent
-                flexGrow="1"
-                marginX="2"
-                justifyContent="space-between"
-              >
-                <Text>Drive config: {isCfgLoaded ? "set" : "unset"}</Text>
-                <HStack width="fit">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={loadConfiguration}
-                  >
-                    Clear appdata
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={loadConfiguration}
-                  >
-                    Fetch config
-                  </Button>
-                </HStack>
-              </ActionBarContent>
-            </ActionBarRoot>
+            <ActionBar isCfgLoaded={isCfgLoaded} loadConfiguration={loadConfiguration} clearConfiguration={clearConfiguration}/>
+
           </VStack>
         </ModalProvider>
       </FileSyncContext.Provider>

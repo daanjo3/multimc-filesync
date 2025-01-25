@@ -1,8 +1,10 @@
 export interface InstanceConfigRoot {
+  version: number;
   instances: InstanceConfig[];
 }
 
 export const newInstanceConfigRoot = (): InstanceConfigRoot => ({
+  version: 1,
   instances: [],
 });
 
